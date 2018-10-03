@@ -25,6 +25,7 @@ namespace AEDAT_File_Reader
     public sealed partial class MainPage : Page
     {
         ObservableCollection<AEDATData> tableData;
+        AEDATData selectedData;
         public MainPage()
         {
             tableData = AEDATDataManager.GetAEDATData();
@@ -61,17 +62,53 @@ namespace AEDAT_File_Reader
             Windows.Storage.StorageFile file = await savePicker.PickSaveFileAsync();
             if (file != null)
             {
-                Windows.Storage.Provider.FileUpdateStatus status =
-            await Windows.Storage.CachedFileManager.CompleteUpdatesAsync(file);
+                Windows.Storage.Provider.FileUpdateStatus status = await Windows.Storage.CachedFileManager.CompleteUpdatesAsync(file);
+                //await Windows.Storage.FileIO.WriteTextAsync(file, "Name, Starting Time, Ending Time, Number of Events, Avg Events/Sec");
                 if (status == Windows.Storage.Provider.FileUpdateStatus.Complete)
                 {
-                    await Windows.Storage.FileIO.WriteTextAsync(file, "Swift as a shadow");
+                    //await Windows.Storage.FileIO.WriteTextAsync(file, "Swift as a shadow");
+                    var stream = await file.OpenAsync(Windows.Storage.FileAccessMode.ReadWrite);
+                    using (var outputStream = stream.GetOutputStreamAt(0))
+                    {
+                        using (var dataWriter = new Windows.Storage.Streams.DataWriter(outputStream))
+                        {
+                            dataWriter.WriteString("Name, Starting Time, Ending Time, Number of Events, Avg Events/Sec\n");
+                            foreach(AEDATData item in tableData)
+                            {
+                                dataWriter.WriteString(item.name+  ","+ item.startingTime + "," + item.endingTime + "," + item.eventCount + "," + item.avgEventsPerSecond + "\n");
+                            }
 
+                            await dataWriter.StoreAsync();
+                            await outputStream.FlushAsync();
+                        }
+                    }
+                    stream.Dispose();
 
                 }
 
 
             }
+        }
+
+        private void editData_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+
+        }
+
+        private void deleteData_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+
+        }
+
+        private void listAEDATItem_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        {
+            FlyoutBase.ShowAttachedFlyout(sender as FrameworkElement);
+            FlyoutBase.ShowAttachedFlyout(sender as FrameworkElement);
+            var s = (FrameworkElement)sender;
+            var d = s.DataContext;
+            var data = d as AEDATData;
+            selectedData = data;
+
         }
     }
 }

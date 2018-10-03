@@ -22,7 +22,7 @@ namespace AEDAT_File_Reader.Models
         public static ObservableCollection<AEDATData> GetAEDATData()
         {
             var data = new ObservableCollection<AEDATData>();
-            // items.Add(new Item { name = "t-shirt", category = "Shirts", price="9.99", minQuantity ="10", TaxID1= "1"});
+          
             return data;
         }
     }

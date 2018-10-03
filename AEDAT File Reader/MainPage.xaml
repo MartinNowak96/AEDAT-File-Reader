@@ -6,6 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:controls="using:Microsoft.Toolkit.Uwp.UI.Controls"
+    xmlns:models="using:AEDAT_File_Reader.Models"
     mc:Ignorable="d"
     RequestedTheme="Dark"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
@@ -29,6 +30,9 @@
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
+
+        
+        
     </Page.Resources>
 
     <Grid>
@@ -58,6 +62,20 @@
                     </Grid>
                 </StackPanel>
             </DataTemplate>
+
+            <DataTemplate x:DataType="models:AEDATData" x:Key="listDataTemplate" >
+                <Grid x:Name="listAEDATItem"  RightTapped="listAEDATItem_RightTapped" HorizontalAlignment="Stretch">
+                    <TextBlock Text="{x:Bind name}"  />
+                    <FlyoutBase.AttachedFlyout>
+                        <MenuFlyout>
+                            
+                            <MenuFlyoutItem Text="Edit Data" x:Name="editData" Tapped="editData_Tapped" />
+                            <MenuFlyoutItem Text="Remove Data" x:Name="deleteData" Tapped="deleteData_Tapped"  />
+                        </MenuFlyout>
+                    </FlyoutBase.AttachedFlyout>
+                </Grid>
+            </DataTemplate>
+
         </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition  Height="Auto"/>
@@ -119,7 +137,15 @@
             </Grid>
 
             <Grid Grid.Column="1" Background="{ThemeResource MyAcrylicBrush}" >
-                
+                <ListView ItemsSource="{x:Bind tableData}" ItemTemplate="{StaticResource listDataTemplate }" >
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                    
+                </ListView>
             </Grid>
         </Grid>
         
