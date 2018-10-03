@@ -131,12 +131,11 @@ namespace AEDAT_File_Reader
             const int headerCheckSize = 23;         // Number of elements in the header check
             const int dataEntrySize = 8;            // Number of elements in the data entry
 
-            //int byteIn;
             bool endOfHeader = false;               // Has the end of the header been found?
             string currentByte;
             string[] currentHeaderBytes = new string[headerCheckSize];
             byte[] currentDataEntry = new byte[dataEntrySize];
-            int timeStamp =0;
+            int timeStamp = 0;
 
             //Compare current bytes being red to find end of header. (#End Of ASCII)
             string[] endOfHeaderCheck = new string[headerCheckSize] { "0A", "23", "45", "6E", "64", "20", "4F", "66", "20", "41", "53", "43", "49", "49", "20", "48", "65", "61", "64", "65", "72", "0D", "0A" };
@@ -146,22 +145,18 @@ namespace AEDAT_File_Reader
             Queue<byte> dataEntryQ = new Queue<byte>();
 
 
-            byte[] result;
+            byte[] result;      // All of the bytes in the AEDAT file loaded into an array
             using (Stream stream = await file.OpenStreamForReadAsync())
             {
                 using (var memoryStream = new MemoryStream())
                 {
-
                     stream.CopyTo(memoryStream);
                     result = memoryStream.ToArray();
                 }
             }
-            int i = 0;
+            int endOfHeaderIndex = 0;
             foreach (int byteIn in result)
             {
-
-            
-
 
                 if (!endOfHeader)
                 {
@@ -174,11 +169,9 @@ namespace AEDAT_File_Reader
                     headerCheckQ.CopyTo(currentHeaderBytes, 0);
                     if (Enumerable.SequenceEqual(endOfHeaderCheck, currentHeaderBytes))
                     {
-                        Console.WriteLine("End of header");
                         endOfHeader = true;
-                        
                     }
-                    i++;
+                    endOfHeaderIndex++;
                 }
                 else
                 {
@@ -188,7 +181,7 @@ namespace AEDAT_File_Reader
                     {
                         dataEntryQ.CopyTo(currentDataEntry, 0);
                         Array.Reverse(currentDataEntry);
-                        timeStamp = BitConverter.ToInt32(currentDataEntry, 0);
+                        timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes
                         break;
                     }
                 }
@@ -198,18 +191,22 @@ namespace AEDAT_File_Reader
 
             int endingTime = 0;
             byte[] finalDataEntry = new byte[dataEntrySize];
-            int k = 0;
-            for (int j = result.Count() -1; j > result.Count() -9; j--)
+            int i = 0;
+            for (int j = result.Count() -1; j > result.Count() - 9; j--)
             {
-                finalDataEntry[k] = result[j];
-                k++;
+                finalDataEntry[i] = result[j];
+                i++;
             }
-            endingTime = BitConverter.ToInt32(finalDataEntry, 0);
+            endingTime = BitConverter.ToInt32(finalDataEntry, 0);   // Timestamp is found in the first four bytes
 
+            // Convert to seconds
             double startingTime = (double)timeStamp / 1000000.000f;
             double endingTime2 = (double)endingTime / 1000000.000f;
-            double eventCount = (result.Count() - i) / 8;
 
+            // Total number of events in the file
+            double eventCount = (result.Count() - endOfHeaderIndex) / 8;
+
+            // Add data to GUI
             tableData.Add(new AEDATData { name = file.Name,
                 startingTime = startingTime,
                 eventCount = eventCount,
