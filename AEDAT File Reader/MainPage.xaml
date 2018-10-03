@@ -11,49 +11,24 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Page.Resources>
-
         <ResourceDictionary>
-
             <ResourceDictionary.ThemeDictionaries>
-
                 <ResourceDictionary x:Key="Default">
-
                     <AcrylicBrush x:Key="MyAcrylicBrush"
-
                                    BackgroundSource="HostBackdrop"
-
                                    TintColor="Black"
-
                                    TintOpacity="0.90"
-
                                    FallbackColor="#FF1F1F1F" />
-
                 </ResourceDictionary>
-
-
-
                 <ResourceDictionary x:Key="Light">
-
                     <AcrylicBrush x:Key="MyAcrylicBrush"
-
                                    BackgroundSource="HostBackdrop"
-
                                    TintColor="White"
-
                                    TintOpacity="0.40"
-
                                    FallbackColor="#FF939393" />
-
                 </ResourceDictionary>
-
-
-
-
-
             </ResourceDictionary.ThemeDictionaries>
-
         </ResourceDictionary>
-
     </Page.Resources>
 
     <Grid>
@@ -95,7 +70,7 @@
             </Grid.ColumnDefinitions>
             <StackPanel Orientation="Horizontal">
                 <Button x:Name="selectFile" Tapped="selectFile_Tapped" >Select A File</Button>
-                <Button Margin="5,0,0,0" >Export to CSV</Button>
+                <Button Margin="5,0,0,0" x:Name="export" Tapped="export_Tapped"  >Export to CSV</Button>
             </StackPanel>
             <TextBlock Grid.Column="1" FontSize="20" Text="Selected Files" HorizontalAlignment="Center"/>
         </Grid>
@@ -130,13 +105,14 @@
         IsReadOnly="False"
         RowDetailsTemplate="{StaticResource RowDetailsTemplate}"
         RowDetailsVisibilityMode="Collapsed"
+                    ItemsSource="{x:Bind tableData}"
         SelectionMode="Extended" RowGroupHeaderPropertyNameAlternative="Range" >
                     <controls:DataGrid.Columns>
-                        <controls:DataGridTextColumn Header="Name" Binding="{Binding Parent_mountain}" Tag="Parent_mountain" />
-                        <controls:DataGridTextColumn Header="Starting Time" Binding="{Binding Rank}" Tag="Rank" />
-                        <controls:DataGridTextColumn Header="Ending Time" Binding="{Binding Mountain}" Tag="Mountain" />
-                        <controls:DataGridTextColumn Header="Number of Events" Binding="{Binding Height_m}" Tag="Height_m" />
-                        <controls:DataGridTextColumn Header="Average Events/ Second" Binding="{Binding Range}" Tag="Range" />
+                        <controls:DataGridTextColumn Header="Name" Binding="{Binding name}" Tag="Name" />
+                        <controls:DataGridTextColumn Header="Starting Time" Binding="{Binding startingTime}" Tag="Starting_Time" />
+                        <controls:DataGridTextColumn Header="Ending Time" Binding="{Binding endingTime}" Tag="Ending_Time" />
+                        <controls:DataGridTextColumn Header="Number of Events" Binding="{Binding eventCount}" Tag="Number_of_Events" />
+                        <controls:DataGridTextColumn Header="Average Events/ Second" Binding="{Binding avgEventsPerSecond}" Tag="Average_Events/_Second" />
                         
                     </controls:DataGrid.Columns>
                 </controls:DataGrid>

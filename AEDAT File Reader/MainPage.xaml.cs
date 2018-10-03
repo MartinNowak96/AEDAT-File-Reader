@@ -41,6 +41,37 @@ namespace AEDAT_File_Reader
 
 
             Windows.Storage.StorageFile file = await picker.PickSingleFileAsync();
+
+            if (file != null)
+            {
+                tableData.Add(new AEDATData { name = file.Name, startingTime = 123 });
+            }
+        }
+
+        private async void export_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+
+            var savePicker = new Windows.Storage.Pickers.FileSavePicker();
+            savePicker.SuggestedStartLocation =
+                Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
+            // Dropdown of file types the user can save the file as
+            savePicker.FileTypeChoices.Add("Comma-seperated Values", new List<string>() { ".csv" });
+            // Default file name if the user does not type one in or select a file to replace
+            savePicker.SuggestedFileName = "New Document";
+            Windows.Storage.StorageFile file = await savePicker.PickSaveFileAsync();
+            if (file != null)
+            {
+                Windows.Storage.Provider.FileUpdateStatus status =
+            await Windows.Storage.CachedFileManager.CompleteUpdatesAsync(file);
+                if (status == Windows.Storage.Provider.FileUpdateStatus.Complete)
+                {
+                    await Windows.Storage.FileIO.WriteTextAsync(file, "Swift as a shadow");
+
+
+                }
+
+
+            }
         }
     }
 }
