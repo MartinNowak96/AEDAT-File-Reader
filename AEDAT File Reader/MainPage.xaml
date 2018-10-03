@@ -186,6 +186,10 @@
             </Grid>
 
             <Grid Grid.Column="1" Background="{ThemeResource MyAcrylicBrush}" >
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"  />
+                        <RowDefinition  Height="Auto"/>
+                    </Grid.RowDefinitions>
                 <ListView ItemsSource="{x:Bind tableData}" ItemTemplate="{StaticResource listDataTemplate }" >
                     <ListView.ItemContainerStyle>
                         <Style TargetType="ListViewItem">
@@ -195,7 +199,10 @@
                     </ListView.ItemContainerStyle>
                     
                 </ListView>
-            </Grid>
+
+                    <Button Grid.Row="1" Content="Remove All" x:Name="removeAll" Tapped="removeAll_Tapped" HorizontalAlignment="Center" />
+
+                </Grid>
         </Grid>
         </Grid>
     </Grid>

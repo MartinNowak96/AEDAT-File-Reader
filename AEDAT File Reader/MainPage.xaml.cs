@@ -42,10 +42,11 @@ namespace AEDAT_File_Reader
             picker.FileTypeFilter.Add(".AEDAT");
 
 
-            Windows.Storage.StorageFile file = await picker.PickSingleFileAsync();
+            var files = await picker.PickMultipleFilesAsync();
 
-            if (file != null)
+            if (files != null)
             {
+                foreach(StorageFile file in files)
                 getData(file);
             }
         }
@@ -73,10 +74,10 @@ namespace AEDAT_File_Reader
                     {
                         using (var dataWriter = new Windows.Storage.Streams.DataWriter(outputStream))
                         {
-                            dataWriter.WriteString("Name, Starting Time (s), Ending Time (s), Number of Events, Avg Events/Sec\n");
+                            dataWriter.WriteString("Name, Starting Time (s), Ending Time (s), Duration (s), Number of Events, Avg Events/Sec\n");
                             foreach(AEDATData item in tableData)
                             {
-                                dataWriter.WriteString(item.name+  ","+ item.startingTime + "," + item.endingTime + "," + item.eventCount + "," + item.avgEventsPerSecond + "\n");
+                                dataWriter.WriteString(item.name+  ","+ item.startingTime + "," + item.endingTime + "," + item.duration+ ","  + item.eventCount + "," + item.avgEventsPerSecond + "\n");
                             }
 
                             await dataWriter.StoreAsync();
@@ -216,5 +217,9 @@ namespace AEDAT_File_Reader
             
         }
 
+        private void removeAll_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            tableData.Clear();
+        }
     }
 }
