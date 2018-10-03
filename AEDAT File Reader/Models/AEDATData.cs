@@ -12,6 +12,7 @@ namespace AEDAT_File_Reader.Models
         public int id { get; set; }
         public string name { get; set; }
         public double startingTime { get; set; }
+        public double duration { get; set; }
         public double endingTime { get; set; }
         public double eventCount { get; set; }
         public double avgEventsPerSecond { get; set; }
