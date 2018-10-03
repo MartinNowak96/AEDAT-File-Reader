@@ -97,7 +97,7 @@ namespace AEDAT_File_Reader
 
         private void deleteData_Tapped(object sender, TappedRoutedEventArgs e)
         {
-
+            tableData.Remove(selectedData);
         }
 
         private void listAEDATItem_RightTapped(object sender, RightTappedRoutedEventArgs e)
