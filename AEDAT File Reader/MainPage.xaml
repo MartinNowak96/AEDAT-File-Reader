@@ -10,6 +10,52 @@
     RequestedTheme="Dark"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
+    <Page.Resources>
+
+        <ResourceDictionary>
+
+            <ResourceDictionary.ThemeDictionaries>
+
+                <ResourceDictionary x:Key="Default">
+
+                    <AcrylicBrush x:Key="MyAcrylicBrush"
+
+                                   BackgroundSource="HostBackdrop"
+
+                                   TintColor="Black"
+
+                                   TintOpacity="0.90"
+
+                                   FallbackColor="#FF1F1F1F" />
+
+                </ResourceDictionary>
+
+
+
+                <ResourceDictionary x:Key="Light">
+
+                    <AcrylicBrush x:Key="MyAcrylicBrush"
+
+                                   BackgroundSource="HostBackdrop"
+
+                                   TintColor="White"
+
+                                   TintOpacity="0.40"
+
+                                   FallbackColor="#FF939393" />
+
+                </ResourceDictionary>
+
+
+
+
+
+            </ResourceDictionary.ThemeDictionaries>
+
+        </ResourceDictionary>
+
+    </Page.Resources>
+
     <Grid>
         <Grid.Resources>
             <DataTemplate x:Key="RowDetailsTemplate">
@@ -42,12 +88,16 @@
             <RowDefinition  Height="Auto"/>
             <RowDefinition  Height="*"/>
         </Grid.RowDefinitions>
-        <Grid Background="#585858">
+        <Grid Background="#2f2f2f">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="6*" />
+                <ColumnDefinition Width="2*" />
+            </Grid.ColumnDefinitions>
             <StackPanel Orientation="Horizontal">
                 <Button x:Name="selectFile" Tapped="selectFile_Tapped" >Select A File</Button>
                 <Button Margin="5,0,0,0" >Export to CSV</Button>
             </StackPanel>
-           
+            <TextBlock Grid.Column="1" FontSize="20" Text="Selected Files" HorizontalAlignment="Center"/>
         </Grid>
 
         <Grid  Grid.Row="1">
@@ -80,8 +130,7 @@
         IsReadOnly="False"
         RowDetailsTemplate="{StaticResource RowDetailsTemplate}"
         RowDetailsVisibilityMode="Collapsed"
-        SelectionMode="Extended"
-        RowGroupHeaderPropertyNameAlternative="Range">
+        SelectionMode="Extended" RowGroupHeaderPropertyNameAlternative="Range" >
                     <controls:DataGrid.Columns>
                         <controls:DataGridTextColumn Header="Name" Binding="{Binding Parent_mountain}" Tag="Parent_mountain" />
                         <controls:DataGridTextColumn Header="Starting Time" Binding="{Binding Rank}" Tag="Rank" />
@@ -93,7 +142,7 @@
                 </controls:DataGrid>
             </Grid>
 
-            <Grid Grid.Column="1" Background="#585858" >
+            <Grid Grid.Column="1" Background="{ThemeResource MyAcrylicBrush}" >
                 
             </Grid>
         </Grid>
