@@ -200,7 +200,7 @@ namespace AEDAT_File_Reader
 
             // Add data to GUI
             tableData.Add(new AEDATData {
-				name = file.Name,
+                name = file.Name.Replace(".aedat", "").Replace(".AEDAT", ""),
                 startingTime = startingTime,
                 eventCount = eventCount,
                 endingTime = endingTime2 ,

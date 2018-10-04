@@ -134,7 +134,7 @@
                 <ColumnDefinition Width="2*" />
             </Grid.ColumnDefinitions>
             <StackPanel Orientation="Horizontal">
-                <Button x:Name="selectFile" Tapped="selectFile_Tapped" >Select A File</Button>
+                <Button x:Name="selectFile" Tapped="selectFile_Tapped" >Select Files</Button>
                 <Button Margin="5,0,0,0" x:Name="export" Tapped="export_Tapped"  >Export to CSV</Button>
             </StackPanel>
             <TextBlock Grid.Column="1" FontSize="20" Text="Selected Files" HorizontalAlignment="Center"/>
