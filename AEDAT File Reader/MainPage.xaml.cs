@@ -87,8 +87,6 @@ namespace AEDAT_File_Reader
                     stream.Dispose();
 
                 }
-
-
             }
         }
 
@@ -122,8 +120,6 @@ namespace AEDAT_File_Reader
             tableData.Insert(index, selectedData);
             dataGrid.ItemsSource = null;
             dataGrid.ItemsSource = tableData;
-
-
         }
 
 
@@ -133,18 +129,15 @@ namespace AEDAT_File_Reader
             const int dataEntrySize = 8;            // Number of elements in the data entry
 
             bool endOfHeader = false;               // Has the end of the header been found?
-            string currentByte;
-            string[] currentHeaderBytes = new string[headerCheckSize];
+            byte[] currentHeaderBytes = new byte[headerCheckSize];
             byte[] currentDataEntry = new byte[dataEntrySize];
             int timeStamp = 0;
 
             //Compare current bytes being red to find end of header. (#End Of ASCII)
-            string[] endOfHeaderCheck = new string[headerCheckSize] { "0A", "23", "45", "6E", "64", "20", "4F", "66", "20", "41", "53", "43", "49", "49", "20", "48", "65", "61", "64", "65", "72", "0D", "0A" };
+            byte[] endOfHeaderCheck = new byte[headerCheckSize] { 0x0a, 0x23, 0x45, 0x6e, 0x64, 0x20, 0x4f, 0x66, 0x20, 0x41, 0x53, 0x43, 0x49, 0x49, 0x20, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x0d, 0x0a };
 
-
-            Queue<string> headerCheckQ = new Queue<string>();
+            Queue<byte> headerCheckQ = new Queue<byte>();
             Queue<byte> dataEntryQ = new Queue<byte>();
-
 
             byte[] result;      // All of the bytes in the AEDAT file loaded into an array
             using (Stream stream = await file.OpenStreamForReadAsync())
@@ -155,14 +148,13 @@ namespace AEDAT_File_Reader
                     result = memoryStream.ToArray();
                 }
             }
-            int endOfHeaderIndex = 0;
-            foreach (int byteIn in result)
-            {
 
+            int endOfHeaderIndex = 0;
+            foreach (byte byteIn in result)
+            {
                 if (!endOfHeader)
                 {
-                    currentByte = string.Format("{0:X2}", byteIn);
-                    headerCheckQ.Enqueue(currentByte);
+                    headerCheckQ.Enqueue(byteIn);
 
                     // Remove oldest element in the queue if it becomes too large. FIFO
                     if (headerCheckQ.Count > headerCheckSize) headerCheckQ.Dequeue();
@@ -177,7 +169,7 @@ namespace AEDAT_File_Reader
                 else
                 {
                     if (dataEntryQ.Count < dataEntrySize)
-                        dataEntryQ.Enqueue((byte)byteIn);
+                        dataEntryQ.Enqueue(byteIn);
                     else
                     {
                         dataEntryQ.CopyTo(currentDataEntry, 0);
@@ -186,10 +178,9 @@ namespace AEDAT_File_Reader
                         break;
                     }
                 }
-                
-
             }
 
+			// Get final data entry
             int endingTime = 0;
             byte[] finalDataEntry = new byte[dataEntrySize];
             int i = 0;
@@ -208,12 +199,14 @@ namespace AEDAT_File_Reader
             double eventCount = (result.Count() - endOfHeaderIndex) / 8;
 
             // Add data to GUI
-            tableData.Add(new AEDATData { name = file.Name,
+            tableData.Add(new AEDATData {
+				name = file.Name,
                 startingTime = startingTime,
                 eventCount = eventCount,
                 endingTime = endingTime2 ,
                 avgEventsPerSecond = Math.Abs(endingTime2 - startingTime)/eventCount,
-                duration =endingTime2 - startingTime });
+                duration =endingTime2 - startingTime
+			});
             
         }
 
