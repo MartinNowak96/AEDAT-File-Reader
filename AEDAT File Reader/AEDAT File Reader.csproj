@@ -101,6 +101,7 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="aedatUtilities.cs" />
     <Compile Include="eventList.xaml.cs">
       <DependentUpon>eventList.xaml</DependentUpon>
     </Compile>

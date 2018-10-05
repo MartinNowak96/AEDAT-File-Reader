@@ -125,18 +125,11 @@ namespace AEDAT_File_Reader
 
         private async void getData(StorageFile file)
         {
-            const int headerCheckSize = 23;         // Number of elements in the header check
             const int dataEntrySize = 8;            // Number of elements in the data entry
 
-            bool endOfHeader = false;               // Has the end of the header been found?
-            byte[] currentHeaderBytes = new byte[headerCheckSize];
             byte[] currentDataEntry = new byte[dataEntrySize];
             int timeStamp = 0;
 
-            //Compare current bytes being red to find end of header. (#End Of ASCII)
-            byte[] endOfHeaderCheck = new byte[headerCheckSize] { 0x0a, 0x23, 0x45, 0x6e, 0x64, 0x20, 0x4f, 0x66, 0x20, 0x41, 0x53, 0x43, 0x49, 0x49, 0x20, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x0d, 0x0a };
-
-            Queue<byte> headerCheckQ = new Queue<byte>();
             Queue<byte> dataEntryQ = new Queue<byte>();
 
             byte[] result;      // All of the bytes in the AEDAT file loaded into an array
@@ -149,39 +142,23 @@ namespace AEDAT_File_Reader
                 }
             }
 
-            int endOfHeaderIndex = 0;
-            foreach (byte byteIn in result)
-            {
-                if (!endOfHeader)
-                {
-                    headerCheckQ.Enqueue(byteIn);
+			int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref result);
 
-                    // Remove oldest element in the queue if it becomes too large. FIFO
-                    if (headerCheckQ.Count > headerCheckSize) headerCheckQ.Dequeue();
-
-                    headerCheckQ.CopyTo(currentHeaderBytes, 0);
-                    if (Enumerable.SequenceEqual(endOfHeaderCheck, currentHeaderBytes))
-                    {
-                        endOfHeader = true;
-                    }
-                    endOfHeaderIndex++;
-                }
-                else
-                {
-                    if (dataEntryQ.Count < dataEntrySize)
-                        dataEntryQ.Enqueue(byteIn);
-                    else
-                    {
-                        dataEntryQ.CopyTo(currentDataEntry, 0);
-                        Array.Reverse(currentDataEntry);
-                        timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes
-                        break;
-                    }
-                }
-            }
+			foreach (byte byteIn in result.Skip(endOfHeaderIndex))
+			{
+				if (dataEntryQ.Count < dataEntrySize)
+					dataEntryQ.Enqueue(byteIn);
+				else
+				{
+					dataEntryQ.CopyTo(currentDataEntry, 0);
+					Array.Reverse(currentDataEntry);
+					timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes
+					break;
+				}
+			}
 
 			// Get final data entry
-            int endingTime = 0;
+			int endingTime = 0;
             byte[] finalDataEntry = new byte[dataEntrySize];
             int i = 0;
             for (int j = result.Count() -1; j > result.Count() - 9; j--)
