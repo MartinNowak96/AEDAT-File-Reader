@@ -87,15 +87,13 @@ namespace AEDAT_File_Reader
             }
         }
 
-        private async  void getEvents(StorageFile file)
+        private async void getEvents(StorageFile file)
         {
             const int dataEntrySize = 8;            // Number of elements in the data entry
 
             byte[] currentDataEntry = new byte[dataEntrySize];
             int timeStamp = 0;
 
-
-            Queue<byte> headerCheckQ = new Queue<byte>();
             Queue<byte> dataEntryQ = new Queue<byte>();
 
             byte[] result;      // All of the bytes in the AEDAT file loaded into an array
@@ -120,18 +118,18 @@ namespace AEDAT_File_Reader
                 Array.Reverse(currentDataEntry);
                 timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes
 
-                
-                //string bits64 = 
-                string on;
-                if (Convert.ToString(currentDataEntry[6], 2).PadLeft(8, '0').Substring(4, 2) == "00")
-                {
-                    on = "Off";
-                }
-                else
-                {
-                    on = "On";
-                }
-                tableData.Add(new Event {time= timeStamp, onOff = on });
+                string eventType;
+
+				if (AedatUtilities.GetEventType(currentDataEntry) == true)
+				{
+					eventType = "ON";
+				}
+				else
+				{
+					eventType = "OFF";
+				}
+
+                tableData.Add(new Event {time= timeStamp, onOff = eventType });
                 
                 
             }

@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AEDAT_File_Reader
 {
@@ -35,8 +32,6 @@ namespace AEDAT_File_Reader
 						foundEndOfHeader = true;
 					}
 					endOfHeaderIndex++;
-
-
 				}
 				else
 				{
@@ -45,6 +40,27 @@ namespace AEDAT_File_Reader
 			}
 
 			return endOfHeaderIndex;
+		}
+
+
+		/// <summary>
+		/// Extracts the event type from a data entry byte array.
+		/// </summary>
+		/// <param name="dataEntry"></param>
+		/// <returns>Returns true for an ON event, false for an OFF event.</returns>
+		public static bool GetEventType(byte[] dataEntry) {
+
+			int eventBit = (dataEntry[5] >> 3) & 1;     //Event type is located in the fourth bit of the sixth byte
+
+			if (eventBit == 0)
+			{
+				return false;	// OFF event
+			}
+			else
+			{
+				return true;	// ON event
+			}
+
 		}
 
 	}
