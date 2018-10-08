@@ -35,6 +35,7 @@
     </Page.Resources>
 
     <Grid>
+        <!-- Edit Popup-->
         <Popup VerticalAlignment="Center"  HorizontalAlignment="Center" Grid.ColumnSpan="3" x:Name="editDataPopUp" IsLightDismissEnabled="True" Width="250" Height="280"  >
 
             <Popup.ChildTransitions>
@@ -74,7 +75,36 @@
                 </Grid>
             </StackPanel>
         </Popup>
-    <Grid>
+        <!-- Export Popup-->
+        <Popup VerticalAlignment="Center"  HorizontalAlignment="Center" Grid.ColumnSpan="3" x:Name="exportSettings" IsLightDismissEnabled="True" Width="250" Height="280"  >
+
+            <Popup.ChildTransitions>
+                <TransitionCollection>
+                    <PopupThemeTransition FromHorizontalOffset="0" FromVerticalOffset="200"/>
+                </TransitionCollection>
+            </Popup.ChildTransitions>
+            <StackPanel Background="#FF1F1F1F" Padding="12">
+                <Grid>
+                    <StackPanel Background="Transparent" Padding="5" >
+                        <TextBlock Text="Export Settings" FontSize="16" Margin="0,0,0,4"/>
+                        <Grid >
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="250"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <ToggleSwitch x:Name="showAverages" Header="Show Averages of Each Column?"  OnContent="Shown" OffContent="Hidden" />
+                                <Button x:Name="exportFromPopUp" Content="Export" HorizontalAlignment="Right" Tapped="exportFromPopUp_Tapped" />
+                            </StackPanel>
+                            <!-- Items in popup-->
+
+                        </Grid>
+                    </StackPanel>
+
+
+                </Grid>
+            </StackPanel>
+        </Popup>
+        <Grid>
         <Grid.Resources>
             <DataTemplate x:Key="RowDetailsTemplate">
                 <StackPanel>

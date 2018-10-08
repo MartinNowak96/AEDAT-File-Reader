@@ -51,9 +51,15 @@ namespace AEDAT_File_Reader
             }
         }
 
-        private async void export_Tapped(object sender, TappedRoutedEventArgs e)
+        private  void export_Tapped(object sender, TappedRoutedEventArgs e)
         {
+            exportSettings.IsOpen = true;
+            
+        }
 
+        private async void exportFromPopUp_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            exportSettings.IsOpen = false;
             var savePicker = new Windows.Storage.Pickers.FileSavePicker();
             savePicker.SuggestedStartLocation =
                 Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
@@ -75,9 +81,31 @@ namespace AEDAT_File_Reader
                         using (var dataWriter = new Windows.Storage.Streams.DataWriter(outputStream))
                         {
                             dataWriter.WriteString("Name, Starting Time (s), Ending Time (s), Duration (s), Number of Events, Avg Events/Sec\n");
-                            foreach(AEDATData item in tableData)
+                            foreach (AEDATData item in tableData)
                             {
-                                dataWriter.WriteString(item.name+  ","+ item.startingTime + "," + item.endingTime + "," + item.duration+ ","  + item.eventCount + "," + item.avgEventsPerSecond + "\n");
+                                dataWriter.WriteString(item.name + "," + item.startingTime + "," + item.endingTime + "," + item.duration + "," + item.eventCount + "," + item.avgEventsPerSecond + "\n");
+                            }
+
+                            if(showAverages.IsOn == true)
+                            {
+                                dataWriter.WriteString("Averages:\n");
+                                double startTimeAverage = 0;
+                                double endTimeAverage = 0;
+                                double durationAverage = 0;
+                                double eventCountAvgerage = 0;
+                                double avgEventPerSecondAverage = 0;
+
+                                foreach (AEDATData item in tableData)
+                                {
+                                  
+                                    startTimeAverage += item.startingTime;
+                                    endTimeAverage += item.endingTime;
+                                    durationAverage += item.duration;
+                                    eventCountAvgerage += item.eventCount;
+                                    avgEventPerSecondAverage += item.avgEventsPerSecond;
+                                }
+                                dataWriter.WriteString(" ," + startTimeAverage/ tableData.Count() + "," + endTimeAverage / tableData.Count() + "," + durationAverage / tableData.Count() + "," + eventCountAvgerage / tableData.Count() + "," + avgEventPerSecondAverage / tableData.Count() + "\n");
+
                             }
 
                             await dataWriter.StoreAsync();
@@ -191,5 +219,7 @@ namespace AEDAT_File_Reader
         {
             tableData.Clear();
         }
+
+        
     }
 }
