@@ -39,7 +39,8 @@
             <NavigationView.MenuItems>
                 <NavigationViewItem Content="Summary" x:Name="summary" />
                 <NavigationViewItem Content="Events" x:Name="events" />
-            </NavigationView.MenuItems>
+            <NavigationViewItem Content="Event Summaries" x:Name="eventSummaries" />
+        </NavigationView.MenuItems>
 
         <Grid>
             <Grid Grid.RowSpan="10" Grid.ColumnSpan="10" x:Name="allBackground" x:FieldModifier="public" Canvas.ZIndex="-1">

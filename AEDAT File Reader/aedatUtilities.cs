@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace AEDAT_File_Reader
@@ -62,6 +64,21 @@ namespace AEDAT_File_Reader
 			}
 
 		}
+
+        public static int[] getXYCords(byte[] dataEntry)
+        {
+            int[] XY = new int[2];
+
+            BitArray bits = new BitArray(dataEntry);
+
+
+            //Select bits using lambda or one liner for loop
+            //y
+            new BitArray(new bool[] { bits[54], bits[55], bits[56], bits[57], bits[58], bits[59], bits[60], bits[61], bits[62] }).CopyTo(XY, 1);
+            //x
+            new BitArray(new bool[] { bits[44],bits[45],bits[46], bits[47],bits[48],bits[49],bits[50],bits[51],bits[52], bits[53]}).CopyTo(XY, 0);
+            return XY;
+        }
 
 	}
 }

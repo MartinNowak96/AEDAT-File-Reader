@@ -46,11 +46,15 @@ namespace AEDAT_File_Reader
                 {
                     ContentFrame.Navigate(typeof(SummaryView));
                 }
-                else
+                else if((string)args.InvokedItem == "Events")
                 {
                     ContentFrame.Navigate(typeof(eventList));
                 }
-               
+                else if ((string)args.InvokedItem == "Event Summaries")
+                {
+                    ContentFrame.Navigate(typeof(EventSummary));
+                }
+
             }
         }
 
