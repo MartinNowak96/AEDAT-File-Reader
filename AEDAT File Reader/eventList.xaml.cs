@@ -132,7 +132,7 @@ namespace AEDAT_File_Reader
                 int x;
                 int y;
 
-                int[] XY = AedatUtilities.getXYCords(currentDataEntry);
+                int[] XY = AedatUtilities.GetXYCords(currentDataEntry);
 
                 tableData.Add(new Event {time= timeStamp, onOff = eventType , x = XY[0], y = XY[1]});
                 

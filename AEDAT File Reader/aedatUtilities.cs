@@ -8,7 +8,13 @@ namespace AEDAT_File_Reader
 	public static class AedatUtilities
 	{
 
-		public static int GetEndOfHeaderIndex(ref byte[] fileBytes) {
+		/// <summary>
+		/// Iterates through an AEDAT file to find the end of the header.
+		/// </summary>
+		/// <param name="fileBytes"></param>
+		/// <returns>Returns an int which signifies the position in the file where the header ends.</returns>
+		public static int GetEndOfHeaderIndex(ref byte[] fileBytes)
+		{
 			bool foundEndOfHeader = false;
 			const int headerCheckSize = 23;         // Number of elements in the header check
 			byte[] currentHeaderBytes = new byte[headerCheckSize];
@@ -50,7 +56,8 @@ namespace AEDAT_File_Reader
 		/// </summary>
 		/// <param name="dataEntry"></param>
 		/// <returns>Returns true for an ON event, false for an OFF event.</returns>
-		public static bool GetEventType(byte[] dataEntry) {
+		public static bool GetEventType(byte[] dataEntry)
+		{
 
 			int eventBit = (dataEntry[5] >> 3) & 1;     //Event type is located in the fourth bit of the sixth byte
 
@@ -65,19 +72,22 @@ namespace AEDAT_File_Reader
 
 		}
 
-        public static int[] getXYCords(byte[] dataEntry)
-        {
-            int[] XY = new int[2];
+		/// <summary>
+		/// Gets the XY coordinates from the provided data entry.
+		/// </summary>
+		/// <param name="dataEntry"></param>
+		/// <returns>Returns an int array containing the XY coordinates.</returns>
+        public static int[] GetXYCords(byte[] dataEntry)
+		{
+            int[] xy = new int[2];
 
             BitArray bits = new BitArray(dataEntry);
 
-
-            //Select bits using lambda or one liner for loop
             //y
-            new BitArray(new bool[] { bits[54], bits[55], bits[56], bits[57], bits[58], bits[59], bits[60], bits[61], bits[62] }).CopyTo(XY, 1);
+            new BitArray(new bool[] { bits[54], bits[55], bits[56], bits[57], bits[58], bits[59], bits[60], bits[61], bits[62] }).CopyTo(xy, 1);
             //x
-            new BitArray(new bool[] { bits[44],bits[45],bits[46], bits[47],bits[48],bits[49],bits[50],bits[51],bits[52], bits[53]}).CopyTo(XY, 0);
-            return XY;
+            new BitArray(new bool[] { bits[44],bits[45],bits[46], bits[47],bits[48],bits[49],bits[50],bits[51],bits[52], bits[53]}).CopyTo(xy, 0);
+            return xy;
         }
 
 	}
