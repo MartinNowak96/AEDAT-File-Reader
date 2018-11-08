@@ -76,19 +76,41 @@ namespace AEDAT_File_Reader
 		/// Gets the XY coordinates from the provided data entry.
 		/// </summary>
 		/// <param name="dataEntry"></param>
-		/// <returns>Returns an int array containing the XY coordinates.</returns>
-        public static int[] GetXYCords(byte[] dataEntry)
+		/// <returns>Returns a uint16 array containing the XY coordinates.</returns>
+        public static UInt16[] GetXYCords(byte[] dataEntry)
 		{
-            int[] xy = new int[2];
+            UInt16[] xy = new UInt16[2];
 
             BitArray bits = new BitArray(dataEntry);
 
             //y
-            new BitArray(new bool[] { bits[54], bits[55], bits[56], bits[57], bits[58], bits[59], bits[60], bits[61], bits[62] }).CopyTo(xy, 1);
-            //x
-            new BitArray(new bool[] { bits[44],bits[45],bits[46], bits[47],bits[48],bits[49],bits[50],bits[51],bits[52], bits[53]}).CopyTo(xy, 0);
+            bool[] hi = new bool[] { bits[54], bits[55], bits[56], bits[57], bits[58], bits[59], bits[60], bits[61], bits[62] };
+
+            UInt16 word = 0;
+            for (int i = 0; i < 9; i++)
+            {
+                if (hi[i])
+                {
+                    int twoToPower = (1 << i);
+                    word = (UInt16)(word + twoToPower);
+                }
+            }
+            xy[0] = word;
+            hi = new bool[] { bits[44], bits[45], bits[46], bits[47], bits[48], bits[49], bits[50], bits[51], bits[52], bits[53] };
+
+            for (int i = 0; i < 10; i++)
+            {
+                if (hi[i])
+                {
+                    int twoToPower = (1 << i);
+                    word = (UInt16)(word + twoToPower);
+                }
+            }
+            xy[1] = word;
+
             return xy;
         }
+    
 
 	}
 }

@@ -209,7 +209,7 @@ namespace AEDAT_File_Reader
                 startingTime = startingTime,
                 eventCount = eventCount,
                 endingTime = endingTime2 ,
-                avgEventsPerSecond = Math.Abs(endingTime2 - startingTime)/eventCount,
+                avgEventsPerSecond = eventCount / Math.Abs(endingTime2 - startingTime),
                 duration =endingTime2 - startingTime
 			});
             

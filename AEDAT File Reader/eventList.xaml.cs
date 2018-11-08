@@ -118,23 +118,9 @@ namespace AEDAT_File_Reader
                 Array.Reverse(currentDataEntry);
                 timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes
 
-                string eventType;
+                UInt16[] XY = AedatUtilities.GetXYCords(currentDataEntry);
 
-				if (AedatUtilities.GetEventType(currentDataEntry) == true)
-				{
-					eventType = "ON";
-				}
-				else
-				{
-					eventType = "OFF";
-				}
-
-                int x;
-                int y;
-
-                int[] XY = AedatUtilities.GetXYCords(currentDataEntry);
-
-                tableData.Add(new Event {time= timeStamp, onOff = eventType , x = XY[0], y = XY[1]});
+                tableData.Add(new Event {time= timeStamp, onOff = AedatUtilities.GetEventType(currentDataEntry), x = XY[0], y = XY[1]});
                 
                 
             }
