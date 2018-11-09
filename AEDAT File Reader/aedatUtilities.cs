@@ -58,18 +58,7 @@ namespace AEDAT_File_Reader
 		/// <returns>Returns true for an ON event, false for an OFF event.</returns>
 		public static bool GetEventType(byte[] dataEntry)
 		{
-
-			int eventBit = (dataEntry[5] >> 3) & 1;     //Event type is located in the fourth bit of the sixth byte
-
-			if (eventBit == 0)
-			{
-				return false;	// OFF event
-			}
-			else
-			{
-				return true;	// ON event
-			}
-
+			return ((dataEntry[5] >> 3) & 1) == 1;     //Event type is located in the fourth bit of the sixth byte
 		}
 
 		/// <summary>
@@ -80,36 +69,31 @@ namespace AEDAT_File_Reader
         public static UInt16[] GetXYCords(byte[] dataEntry)
 		{
             UInt16[] xy = new UInt16[2];
-
             BitArray bits = new BitArray(dataEntry);
 
-            //y
-            bool[] hi = new bool[] { bits[54], bits[55], bits[56], bits[57], bits[58], bits[59], bits[60], bits[61], bits[62] };
+            // X
+            bool[] cord = new bool[] { bits[54], bits[55], bits[56], bits[57], bits[58], bits[59], bits[60], bits[61], bits[62] };
+            xy[0] = BoolArrayToUint(cord);
 
-            UInt16 word = 0;
-            for (int i = 0; i < 9; i++)
-            {
-                if (hi[i])
-                {
-                    int twoToPower = (1 << i);
-                    word = (UInt16)(word + twoToPower);
-                }
-            }
-            xy[0] = word;
-            hi = new bool[] { bits[44], bits[45], bits[46], bits[47], bits[48], bits[49], bits[50], bits[51], bits[52], bits[53] };
-
-            for (int i = 0; i < 10; i++)
-            {
-                if (hi[i])
-                {
-                    int twoToPower = (1 << i);
-                    word = (UInt16)(word + twoToPower);
-                }
-            }
-            xy[1] = word;
+			// Y
+            cord = new bool[] { bits[44], bits[45], bits[46], bits[47], bits[48], bits[49], bits[50], bits[51], bits[52], bits[53] };
+            xy[1] = BoolArrayToUint(cord);
 
             return xy;
         }
+
+		private static UInt16 BoolArrayToUint(bool[] bools) {
+			UInt16 word = 0;
+
+			for (UInt16 i = 0; i < bools.Length; i++) {
+				if (bools[i])
+				{
+					int twoToPower = (1 << i);
+					word = (UInt16)(word + twoToPower);
+				}
+			}
+			return word;
+		}
     
 
 	}
