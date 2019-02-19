@@ -54,8 +54,12 @@ namespace AEDAT_File_Reader
                 {
                     ContentFrame.Navigate(typeof(EventSummary));
                 }
+				else if ((string)args.InvokedItem == "Video")
+				{
+					ContentFrame.Navigate(typeof(videoPage));
+				}
 
-            }
+			}
         }
 
 

@@ -1,7 +1,12 @@
-﻿using System;
+﻿using AEDAT_File_Reader.Models;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
+using Windows.Storage;
 
 namespace AEDAT_File_Reader
 {
@@ -66,18 +71,18 @@ namespace AEDAT_File_Reader
 		/// </summary>
 		/// <param name="dataEntry"></param>
 		/// <returns>Returns a uint16 array containing the XY coordinates.</returns>
-        public static UInt16[] GetXYCords(byte[] dataEntry)
+        public static UInt16[] GetXYCords(byte[] dataEntry, UInt16 height)
 		{
             UInt16[] xy = new UInt16[2];
             BitArray bits = new BitArray(dataEntry);
 
-            // X
+            // Y
             bool[] cord = new bool[] { bits[54], bits[55], bits[56], bits[57], bits[58], bits[59], bits[60], bits[61], bits[62] };
-            xy[0] = BoolArrayToUint(cord);
+            xy[1] = Convert.ToUInt16((height - BoolArrayToUint(cord)) & 0xffff);
 
-			// Y
+			// X
             cord = new bool[] { bits[44], bits[45], bits[46], bits[47], bits[48], bits[49], bits[50], bits[51], bits[52], bits[53] };
-            xy[1] = BoolArrayToUint(cord);
+            xy[0] = BoolArrayToUint(cord);
 
             return xy;
         }
@@ -94,7 +99,68 @@ namespace AEDAT_File_Reader
 			}
 			return word;
 		}
-    
 
+		public static  async Task< List<Event>> GetEvents(StorageFile file)
+		{
+			
+			byte[] result  = await readToBytes(file);      // All of the bytes in the AEDAT file loaded into an array
+			
+			List<Event> tableData = new List<Event>();
+			const int dataEntrySize = 8;            // Number of elements in the data entry
+
+			byte[] currentDataEntry = new byte[dataEntrySize];
+			
+
+			int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref result);
+
+			int timeStamp = 0;
+			for (int i = endOfHeaderIndex; i < result.Count() - 1; i += 8)
+			{
+				for (int j = 7; j > -1; j--)
+				{
+					currentDataEntry[j] = result[i + j];
+
+				}
+				Array.Reverse(currentDataEntry);
+				timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes
+
+				UInt16[] XY = AedatUtilities.GetXYCords(currentDataEntry, 180);
+
+				tableData.Add(new Event { time = timeStamp, onOff = AedatUtilities.GetEventType(currentDataEntry), x = XY[0], y = XY[1] });
+
+
+			}
+
+			return tableData;
+
+
+		}
+
+		public static async Task<byte[]> readToBytes(StorageFile file)
+		{
+			byte[] result;
+			using (Stream stream = await file.OpenStreamForReadAsync())
+			{
+				using (var memoryStream = new MemoryStream())
+				{
+					stream.CopyTo(memoryStream);
+					result = memoryStream.ToArray();
+				}
+			}
+
+			return result;
+		}
+
+		public static void setPixel(ref byte[] pixels, int x, int y, byte[] rgba, int imageWidth)
+		{
+			y = y - 1;
+		
+			int startingPoint = (((imageWidth * y) + x)  * 4);
+
+			pixels[startingPoint] = rgba[2];
+			pixels[startingPoint + 1] = rgba[1];
+			pixels[startingPoint + 2] = rgba[0];
+			pixels[startingPoint + 3] = rgba[3];
+		}
 	}
 }

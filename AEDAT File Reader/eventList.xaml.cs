@@ -45,9 +45,9 @@ namespace AEDAT_File_Reader
 
             if (file != null)
             {
-                getEvents(file);
-            }
-        }
+				dataGrid.ItemsSource = await AedatUtilities.GetEvents(file);
+			}
+		}
 
         private async void export_Tapped(object sender, TappedRoutedEventArgs e)
         {
@@ -87,47 +87,6 @@ namespace AEDAT_File_Reader
             }
         }
 
-        private async void getEvents(StorageFile file)
-        {
-            const int dataEntrySize = 8;            // Number of elements in the data entry
-
-            byte[] currentDataEntry = new byte[dataEntrySize];
-            int timeStamp = 0;
-
-            Queue<byte> dataEntryQ = new Queue<byte>();
-
-            byte[] result;      // All of the bytes in the AEDAT file loaded into an array
-            using (Stream stream = await file.OpenStreamForReadAsync())
-            {
-                using (var memoryStream = new MemoryStream())
-                {
-                    stream.CopyTo(memoryStream);
-                    result = memoryStream.ToArray();
-                }
-            }
-
-			int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref result);
-
-            for(int i = endOfHeaderIndex; i < result.Count() - 1; i += 8)
-            {
-                for(int j = 7; j > -1; j--)
-                {
-                    currentDataEntry[j] = result[i+j];
-
-                }
-                Array.Reverse(currentDataEntry);
-                timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes
-
-                UInt16[] XY = AedatUtilities.GetXYCords(currentDataEntry);
-
-                tableData.Add(new Event {time= timeStamp, onOff = AedatUtilities.GetEventType(currentDataEntry), x = XY[0], y = XY[1]});
-                
-                
-            }
-            dataGrid.ItemsSource = tableData;
-
-
-
-        }
+        
     }
 }
