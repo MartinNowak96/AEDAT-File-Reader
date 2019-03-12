@@ -33,8 +33,26 @@ namespace AEDAT_File_Reader
 			InitializeComponent();
 		}
 
-		private async void selectFile_Tapped(object sender, TappedRoutedEventArgs e)
+		private async void SelectFile_Tapped(object sender, TappedRoutedEventArgs e)
 		{
+			int frameTime;              // The amount of time per frame in uS (30 fps = 33333)
+			int maxFrames;             // Max number of frames in the reconstructed video
+
+			// Check for invalid input
+			try
+			{
+				frameTime = Int32.Parse(frameTimeTB.Text);
+				maxFrames = Int32.Parse(maxFramesTB.Text);
+				if (maxFrames <= 0 || frameTime <= 0) {
+					throw new FormatException("Parameters must be greater than 0");
+				}
+			}
+			catch (FormatException)
+			{
+				// TODO: Popup error message
+				return;
+			}
+
 			var picker = new FileOpenPicker
 			{
 				ViewMode = PickerViewMode.Thumbnail,
@@ -48,44 +66,41 @@ namespace AEDAT_File_Reader
 			if (file != null)
 			{
 
-				ushort cameraX = 240;
-				ushort cameraY = 180;
-				int maxFrames = 1000;
-
-				WriteableBitmap bitmap = new WriteableBitmap(cameraX, cameraY);
+				ushort cameraX = 240;		// Camera X resolution in pixels
+				ushort cameraY = 180;       // Camera Y resolution in pixels
 
 				// Initilize writeable bitmap
+				WriteableBitmap bitmap = new WriteableBitmap(cameraX, cameraY);
 				InMemoryRandomAccessStream inMemoryRandomAccessStream = new InMemoryRandomAccessStream();
 				BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, inMemoryRandomAccessStream);
 				Stream pixelStream = bitmap.PixelBuffer.AsStream();
-				byte[] pixels = new byte[pixelStream.Length];
+				byte[] currentFrame = new byte[pixelStream.Length];
 
-				byte[] result = await AedatUtilities.readToBytes(file);
-				const int dataEntrySize = 8;
-				byte[] currentDataEntry = new byte[dataEntrySize];
-				int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref result);
+				byte[] aedatFile = await AedatUtilities.readToBytes(file);
+				byte[] currentDataEntry = new byte[AedatUtilities.dataEntrySize];
+				int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref aedatFile);
 				int lastTime = -999999;
 				int timeStamp = 0;
-				int count = 0;
+				int frameCount = 0;
 
-				for (int i = endOfHeaderIndex; i < (result.Length); i += 8)
+				// Read through AEDAT file
+				for (int i = endOfHeaderIndex; i < (aedatFile.Length); i += AedatUtilities.dataEntrySize)
 				{
 					for (int j = 7; j > -1; j--)
 					{
-						currentDataEntry[j] = result[i + j];
-
+						currentDataEntry[j] = aedatFile[i + j];
 					}
 					Array.Reverse(currentDataEntry);
 					timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes, uS
 
 					UInt16[] XY = AedatUtilities.GetXYCords(currentDataEntry, cameraY);
-					if (AedatUtilities.GetEventType(currentDataEntry))
+					if (AedatUtilities.GetEventType(currentDataEntry)) // ON event
 					{
-						AedatUtilities.setPixel(ref pixels, XY[0], XY[1], Colors.Green, cameraX);
+						AedatUtilities.setPixel(ref currentFrame, XY[0], XY[1], Colors.Green, cameraX);
 					}
-					else
+					else	// OFF event
 					{
-						AedatUtilities.setPixel(ref pixels, XY[0], XY[1], Colors.Red, cameraX);
+						AedatUtilities.setPixel(ref currentFrame, XY[0], XY[1], Colors.Red, cameraX);
 					}
 					if(lastTime == -999999)
 					{
@@ -93,31 +108,32 @@ namespace AEDAT_File_Reader
 					}
 					else
 					{
-						if(lastTime+ 33333 <= timeStamp )//30 fps
+						if (lastTime + frameTime <= timeStamp) // Collected events within specified timeframe, add frame to video
 						{
-		
-							WriteableBitmap b = new WriteableBitmap(cameraX,cameraY);
+							WriteableBitmap b = new WriteableBitmap(cameraX, cameraY);
 							using (Stream stream = b.PixelBuffer.AsStream())
 							{
-								await stream.WriteAsync(pixels, 0, pixels.Length);
+								await stream.WriteAsync(currentFrame, 0, currentFrame.Length);
 							}
 
 							SoftwareBitmap outputBitmap = SoftwareBitmap.CreateCopyFromBuffer(b.PixelBuffer, BitmapPixelFormat.Bgra8, b.PixelWidth, b.PixelHeight, BitmapAlphaMode.Premultiplied);
 							CanvasBitmap bitmap2 = CanvasBitmap.CreateFromSoftwareBitmap(CanvasDevice.GetSharedDevice(), outputBitmap);
-							MediaClip mediaClip = MediaClip.CreateFromSurface(bitmap2, TimeSpan.FromSeconds(.03));
+							MediaClip mediaClip = MediaClip.CreateFromSurface(bitmap2, TimeSpan.FromSeconds(0.0333f));
 	
 							composition.Clips.Add(mediaClip);
-							count++;
-							if (count > maxFrames)
+							frameCount++;
+							if (frameCount > maxFrames)
 							{
 								break;
 							}
-							pixels = new byte[pixelStream.Length];
+							currentFrame = new byte[pixelStream.Length];
 							lastTime = timeStamp;
 						}
 					}
 					
 				}
+
+				// Create video file
 				var sampleFile = await ApplicationData.Current.LocalFolder.CreateFileAsync("WBVideo.mp4");
 				await composition.SaveAsync(sampleFile);
 				composition = await MediaComposition.LoadAsync(sampleFile);

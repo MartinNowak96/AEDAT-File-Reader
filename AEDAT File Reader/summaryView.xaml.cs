@@ -153,9 +153,8 @@ namespace AEDAT_File_Reader
 
         private async void getData(StorageFile file)
         {
-            const int dataEntrySize = 8;            // Number of elements in the data entry
 
-            byte[] currentDataEntry = new byte[dataEntrySize];
+            byte[] currentDataEntry = new byte[AedatUtilities.dataEntrySize];
             int timeStamp = 0;
 
             Queue<byte> dataEntryQ = new Queue<byte>();
@@ -174,7 +173,7 @@ namespace AEDAT_File_Reader
 
 			foreach (byte byteIn in result.Skip(endOfHeaderIndex))
 			{
-				if (dataEntryQ.Count < dataEntrySize)
+				if (dataEntryQ.Count < AedatUtilities.dataEntrySize)
 					dataEntryQ.Enqueue(byteIn);
 				else
 				{
@@ -187,7 +186,7 @@ namespace AEDAT_File_Reader
 
 			// Get final data entry
 			int endingTime = 0;
-            byte[] finalDataEntry = new byte[dataEntrySize];
+            byte[] finalDataEntry = new byte[AedatUtilities.dataEntrySize];
             int i = 0;
             for (int j = result.Count() -1; j > result.Count() - 9; j--)
             {

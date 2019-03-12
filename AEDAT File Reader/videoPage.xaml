@@ -16,13 +16,16 @@
 
 		<Grid Background="#2f2f2f"  >
 			<StackPanel Orientation="Horizontal">
-				<Button x:Name="selectFile" Tapped="selectFile_Tapped" >Select A File</Button>
+				<Button x:Name="SelectFile" Tapped="SelectFile_Tapped" >Select A File</Button>
 			</StackPanel>
 		</Grid>
 
 		<Grid Grid.Row="1" >
-
-				<Image x:Name="display" Stretch="Uniform"   > </Image>
+			<TextBox x:Name="frameTimeTB" InputScope="Number" Header="Time per frame (uS):" 
+					 Height="60" Width="200" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+			<TextBox x:Name="maxFramesTB" InputScope="Number" Header="Maximum number of frames:" 
+					 Height="60" Width="200" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,70,0,0"/>
+			<Image x:Name="display" Stretch="Uniform"> </Image>
 		
 		</Grid>
 	</Grid>

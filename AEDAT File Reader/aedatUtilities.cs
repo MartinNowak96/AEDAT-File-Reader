@@ -2,7 +2,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,6 +11,11 @@ namespace AEDAT_File_Reader
 {
 	public static class AedatUtilities
 	{
+
+		public const int dataEntrySize = 8;     // How many bytes is in an AEDAT data entry
+
+	    // # HardwareInterface:
+		public static readonly byte[] hardwareInterfaceCheck = new byte[20] { 0x23, 0x20, 0x48, 0x61, 0x72, 0x64, 0x77, 0x61, 0x72, 0x65, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x3a };
 
 		/// <summary>
 		/// Iterates through an AEDAT file to find the end of the header.
@@ -53,6 +57,45 @@ namespace AEDAT_File_Reader
 			}
 
 			return endOfHeaderIndex;
+		}
+
+		public static string FindLineInHeader(byte[] search, ref byte[] fileBytes) {
+			bool foundSearch = false;
+			int checkLength = search.Length;
+			byte[] currentCheckBytes = new byte[checkLength];
+
+			Queue<byte> searchCheckQ = new Queue<byte>();
+
+			int endOfCheckIndex = 0;
+			foreach (byte byteIn in fileBytes)
+			{
+				if (!foundSearch)
+				{
+					searchCheckQ.Enqueue(byteIn);
+
+					// Remove oldest element in the queue if it becomes too large. FIFO
+					if (searchCheckQ.Count > checkLength) searchCheckQ.Dequeue();
+
+					searchCheckQ.CopyTo(currentCheckBytes, 0);
+					if (Enumerable.SequenceEqual(hardwareInterfaceCheck, currentCheckBytes))
+					{
+						foundSearch = true;
+					}
+					endOfCheckIndex++;
+				}
+				else
+				{
+					break;
+				}
+			}
+
+			// TODO
+			// Go back checkLength bytes to get the start of the line
+			// Then start making a string, end string when it hits a newline character
+			// return string
+
+			// Return real stuff
+			return "0";
 		}
 
 
