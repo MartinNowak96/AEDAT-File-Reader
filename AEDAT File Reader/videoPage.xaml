@@ -1,13 +1,24 @@
 ﻿<Page
     x:Class="AEDAT_File_Reader.videoPage"
+
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:AEDAT_File_Reader"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
+	Loaded="Page_Loaded"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
+	<Page.Resources>
+		<DataTemplate x:Key="colorCombo" x:DataType="local:Colors">
+			<StackPanel Orientation="Vertical" >
+				<TextBlock Text="{x:Bind Name}"/>
+				
+			</StackPanel>
+		</DataTemplate>
+	</Page.Resources>
+		
     <Grid>
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto" />
@@ -21,12 +32,24 @@
 		</Grid>
 
 		<Grid Grid.Row="1" >
-			<TextBox x:Name="frameTimeTB" InputScope="Number" Header="Time per frame (uS):" 
-					 Height="60" Width="200" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-			<TextBox x:Name="maxFramesTB" InputScope="Number" Header="Maximum number of frames:" 
-					 Height="60" Width="200" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,70,0,0"/>
-			<Image x:Name="display" Stretch="Uniform"> </Image>
-		
+			<StackPanel>
+				<TextBox x:Name="frameTimeTB" InputScope="Number" Header="Time per frame (uS):" 
+					 Height="60" Width="200" HorizontalAlignment="Left" VerticalAlignment="Top" Text="1000"/>
+				<StackPanel Orientation="Horizontal" >
+					<TextBox x:Name="maxFramesTB" InputScope="Number" Header="Maximum number of frames:" 
+					 Height="60" Width="200" HorizontalAlignment="Left" VerticalAlignment="Top"  Text="100" />
+					<StackPanel Orientation="Horizontal"  Margin="10,25,0,0">
+						<CheckBox  x:Name="allFrameCheckBox" Checked="AllFrameCheckBox_Checked" Content="All Frames" Unchecked="AllFrameCheckBox_Unchecked"   ></CheckBox>
+					
+					</StackPanel>
+					
+				</StackPanel>
+				<ComboBox x:Name="onColorCombo" ItemsSource="{x:Bind colors}" ItemTemplate="{StaticResource colorCombo}" Header="On Event Colors"   > </ComboBox>
+				<ComboBox x:Name="offColorCombo" ItemsSource="{x:Bind colors}" ItemTemplate="{StaticResource colorCombo}" Header="Off Event Colors" ></ComboBox>
+
+			</StackPanel>
+			
+			<MediaElement x:Name="mediaSimple"  Width="400" AutoPlay="True"/>
 		</Grid>
 	</Grid>
 </Page>
