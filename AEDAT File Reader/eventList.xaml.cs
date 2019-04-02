@@ -45,44 +45,60 @@ namespace AEDAT_File_Reader
 			}
 		}
 
-        private async void export_Tapped(object sender, TappedRoutedEventArgs e)
+        private void export_Tapped(object sender, TappedRoutedEventArgs e)
         {
-            var savePicker = new Windows.Storage.Pickers.FileSavePicker();
-            savePicker.SuggestedStartLocation =
-                Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
-            // Dropdown of file types the user can save the file as
-            savePicker.FileTypeChoices.Add("Comma-seperated Values", new List<string>() { ".csv" });
-            // Default file name if the user does not type one in or select a file to replace
-            savePicker.SuggestedFileName = "New Document";
-            Windows.Storage.StorageFile file = await savePicker.PickSaveFileAsync();
-            if (file != null)
-            {
-                Windows.Storage.Provider.FileUpdateStatus status = await Windows.Storage.CachedFileManager.CompleteUpdatesAsync(file);
-                //await Windows.Storage.FileIO.WriteTextAsync(file, "Name, Starting Time, Ending Time, Number of Events, Avg Events/Sec");
-                if (status == Windows.Storage.Provider.FileUpdateStatus.Complete)
-                {
-                    //await Windows.Storage.FileIO.WriteTextAsync(file, "Swift as a shadow");
-                    var stream = await file.OpenAsync(Windows.Storage.FileAccessMode.ReadWrite);
-                    using (var outputStream = stream.GetOutputStreamAt(0))
-                    {
-                        using (var dataWriter = new Windows.Storage.Streams.DataWriter(outputStream))
-                        {
-                            dataWriter.WriteString("On/Off, X, Y, Timestamp\n");
-                            foreach (Event item in dataGrid.ItemsSource)
-                            {
-                                dataWriter.WriteString(item.onOff + "," + item.x + "," + item.y + "," + item.time + "\n");
-                            }
-
-                            await dataWriter.StoreAsync();
-                            await outputStream.FlushAsync();
-                        }
-                    }
-                    stream.Dispose();
-
-                }
-            }
+			exportSettings.IsOpen = true;
         }
 
-        
-    }
+		private async void ExportFromPopUp_Tapped(object sender, TappedRoutedEventArgs e)
+		{
+			var savePicker = new Windows.Storage.Pickers.FileSavePicker();
+			savePicker.SuggestedStartLocation =
+				Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
+			// Dropdown of file types the user can save the file as
+			savePicker.FileTypeChoices.Add("Comma-seperated Values", new List<string>() { ".csv" });
+			// Default file name if the user does not type one in or select a file to replace
+			savePicker.SuggestedFileName = "New Document";
+			Windows.Storage.StorageFile file = await savePicker.PickSaveFileAsync();
+			if (file != null)
+			{
+				Windows.Storage.Provider.FileUpdateStatus status = await Windows.Storage.CachedFileManager.CompleteUpdatesAsync(file);
+				//await Windows.Storage.FileIO.WriteTextAsync(file, "Name, Starting Time, Ending Time, Number of Events, Avg Events/Sec");
+				if (status == Windows.Storage.Provider.FileUpdateStatus.Complete)
+				{
+					//await Windows.Storage.FileIO.WriteTextAsync(file, "Swift as a shadow");
+					var stream = await file.OpenAsync(Windows.Storage.FileAccessMode.ReadWrite);
+					using (var outputStream = stream.GetOutputStreamAt(0))
+					{
+						using (var dataWriter = new Windows.Storage.Streams.DataWriter(outputStream))
+						{
+							dataWriter.WriteString("On/Off, X, Y, Timestamp\n");
+
+							if (onOffCol.IsOn == true)
+							{
+								foreach (Event item in dataGrid.ItemsSource)
+								{
+									dataWriter.WriteString((item.onOff == true? "1": "-1") + "," + item.x + "," + item.y + "," + item.time + "\n");
+								}
+
+							}
+							else
+							{
+								foreach (Event item in dataGrid.ItemsSource)
+								{
+									dataWriter.WriteString(item.onOff + "," + item.x + "," + item.y + "," + item.time + "\n");
+								}
+
+							}
+
+							await dataWriter.StoreAsync();
+							await outputStream.FlushAsync();
+						}
+					}
+					stream.Dispose();
+
+				}
+			}
+		}
+	}
 }

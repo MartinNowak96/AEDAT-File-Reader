@@ -11,7 +11,9 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Grid>
-        <Grid.Resources>
+
+
+		<Grid.Resources>
             <DataTemplate x:Key="RowDetailsTemplate">
                 <StackPanel>
                     <TextBlock Margin="20" Text="Here are the details for the selected mountain:" />
@@ -65,7 +67,39 @@
         
         
         <Grid Grid.Row="1" >
-            <controls:DataGrid
+
+			<Popup VerticalAlignment="Center"  HorizontalAlignment="Center" Grid.ColumnSpan="3" x:Name="exportSettings" IsLightDismissEnabled="True" Width="250" Height="280"  >
+
+				<Popup.ChildTransitions>
+					<TransitionCollection>
+						<PopupThemeTransition FromHorizontalOffset="0" FromVerticalOffset="200"/>
+					</TransitionCollection>
+				</Popup.ChildTransitions>
+				<StackPanel Background="#FF1F1F1F" Padding="12">
+					<Grid>
+						<StackPanel Background="Transparent" Padding="5" >
+							<TextBlock Text="Export Settings" FontSize="16" Margin="0,0,0,4"/>
+							<Grid >
+								<Grid.ColumnDefinitions>
+									<ColumnDefinition Width="250"/>
+								</Grid.ColumnDefinitions>
+								<StackPanel>
+									<ToggleSwitch x:Name="onOffCol" Header="On/Off Column Boolean or Integer"  OnContent="Integer" OffContent="Boolean" />
+									<Button x:Name="exportFromPopUp" Content="Export" HorizontalAlignment="Right" Tapped="ExportFromPopUp_Tapped" />
+								</StackPanel>
+								<!-- Items in popup-->
+
+							</Grid>
+						</StackPanel>
+
+
+					</Grid>
+				</StackPanel>
+			</Popup>
+
+
+
+			<controls:DataGrid
       Grid.Row="1"
                     RequestedTheme="Dark"
         x:Name="dataGrid"
