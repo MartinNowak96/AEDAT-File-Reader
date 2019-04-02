@@ -42,6 +42,10 @@ namespace AEDAT_File_Reader
 				{
 					ContentFrame.Navigate(typeof(videoPage));
 				}
+				else if ((string)args.InvokedItem == "Testing")
+				{
+					ContentFrame.Navigate(typeof(TestPage));
+				}
 
 			}
         }

@@ -4,19 +4,24 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Windows.Storage;
+using Windows.UI.Xaml.Controls;
 
 namespace AEDAT_File_Reader
 {
 	public static class AedatUtilities
 	{
+		//TODO: GET CAMERA TYPE & GETENDOFHEADERINDEX -> only grab the first 1MB or so
+
 
 		public const int dataEntrySize = 8;     // How many bytes is in an AEDAT data entry
 
 	    // # HardwareInterface:
 		public static readonly byte[] hardwareInterfaceCheck = new byte[20] { 0x23, 0x20, 0x48, 0x61, 0x72, 0x64, 0x77, 0x61, 0x72, 0x65, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x3a };
 
+		
 		/// <summary>
 		/// Iterates through an AEDAT file to find the end of the header.
 		/// </summary>
@@ -59,6 +64,13 @@ namespace AEDAT_File_Reader
 			return endOfHeaderIndex;
 		}
 
+
+		/// <summary>
+		/// Searches for a particular line in the AEDAT header
+		/// </summary>
+		/// <param name="search"></param>
+		/// <param name="fileBytes"></param>
+		/// <returns>The line searched for, if found</returns>
 		public static string FindLineInHeader(byte[] search, ref byte[] fileBytes) {
 			bool foundSearch = false;
 			int checkLength = search.Length;
@@ -67,6 +79,10 @@ namespace AEDAT_File_Reader
 			Queue<byte> searchCheckQ = new Queue<byte>();
 
 			int endOfCheckIndex = 0;
+			int startOfLineIndex = -1;
+			int endOfLineIndex = -1;
+			byte[] newLine = Encoding.ASCII.GetBytes(Environment.NewLine);
+
 			foreach (byte byteIn in fileBytes)
 			{
 				if (!foundSearch)
@@ -80,22 +96,37 @@ namespace AEDAT_File_Reader
 					if (Enumerable.SequenceEqual(hardwareInterfaceCheck, currentCheckBytes))
 					{
 						foundSearch = true;
+						startOfLineIndex = endOfCheckIndex - searchCheckQ.Count;
+						endOfLineIndex = startOfLineIndex;
+						break;
 					}
 					endOfCheckIndex++;
+				}
+			}
+
+			// Search for newline character
+			int newlineAttempts = 0;
+			while (true)
+			{
+				if (fileBytes[endOfLineIndex] != newLine[0] && fileBytes[endOfLineIndex + 1] != newLine[1])
+				{
+					endOfLineIndex++;
+					newlineAttempts++;
 				}
 				else
 				{
 					break;
 				}
+
+				if(newlineAttempts > 10000)
+				{
+					return ("ERROR: Could not find newLine character");
+				}
+
 			}
 
-			// TODO
-			// Go back checkLength bytes to get the start of the line
-			// Then start making a string, end string when it hits a newline character
-			// return string
-
-			// Return real stuff
-			return "0";
+			var searchReturn = fileBytes.Skip(startOfLineIndex).Take(newlineAttempts);
+			return Encoding.UTF8.GetString(searchReturn.ToArray());
 		}
 
 
@@ -167,7 +198,7 @@ namespace AEDAT_File_Reader
 				Array.Reverse(currentDataEntry);
 				timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes
 
-				UInt16[] XY = AedatUtilities.GetXYCords(currentDataEntry, 180);
+				UInt16[] XY = AedatUtilities.GetXYCords(currentDataEntry, 180);//MAKE CONFIG FOR CAMERA TYPE
 
 				tableData.Add(new Event { time = timeStamp, onOff = AedatUtilities.GetEventType(currentDataEntry), x = XY[0], y = XY[1] });
 
@@ -204,6 +235,11 @@ namespace AEDAT_File_Reader
 			pixels[startingPoint + 1] = rgba[1];
 			pixels[startingPoint + 2] = rgba[0];
 			pixels[startingPoint + 3] = rgba[3];
+		}
+
+		public static void ParseCameraType(string str)
+		{
+			
 		}
 	}
 }

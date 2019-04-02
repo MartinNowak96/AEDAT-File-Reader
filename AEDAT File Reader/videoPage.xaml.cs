@@ -27,8 +27,8 @@ namespace AEDAT_File_Reader
 
 		public Colors(string name, byte[] color)
 		{
-			this.Name = name;
-			this.Color = color;
+			Name = name;
+			Color = color;
 		}
 		public string Name;
 		public byte[] Color;
@@ -57,13 +57,13 @@ namespace AEDAT_File_Reader
 		}
 		string previousValue = "100";
 
-		private async void SelectFile_Tapped(object sender, TappedRoutedEventArgs e)
+		
+			private async void SelectFile_Tapped(object sender, TappedRoutedEventArgs e)
 		{
 			int frameTime;              // The amount of time per frame in uS (30 fps = 33333)
 			int maxFrames;             // Max number of frames in the reconstructed video
 
 			// Check for invalid input
-		
 			try
 			{
 				frameTime = Int32.Parse(frameTimeTB.Text);
@@ -79,14 +79,14 @@ namespace AEDAT_File_Reader
 			}
 			catch (FormatException)
 			{
-				ContentDialog noWifiDialog = new ContentDialog()
+				ContentDialog invaldInputDialogue = new ContentDialog()
 				{
 					Title = "Invalid Input",
 					Content = "Please enter a valid number.",
 					CloseButtonText = "Close"
 				};
 
-				await noWifiDialog.ShowAsync();
+				await invaldInputDialogue.ShowAsync();
 				return;
 			}
 
@@ -103,6 +103,7 @@ namespace AEDAT_File_Reader
 				return;
 			}
 
+			// Grab ON and OFF colors from comboBox
 			Colors onColor = onColorCombo.SelectedItem as Colors;
 			Colors offColor = offColorCombo.SelectedItem as Colors;
 
@@ -133,6 +134,7 @@ namespace AEDAT_File_Reader
 				byte[] currentDataEntry = new byte[AedatUtilities.dataEntrySize];
 				int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref aedatFile);
 				int lastTime = -999999;
+				float playback_frametime = 1.0f / 30.0f;
 				int timeStamp = 0;
 				int frameCount = 0;
 
@@ -147,14 +149,15 @@ namespace AEDAT_File_Reader
 					timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes, uS
 
 					UInt16[] XY = AedatUtilities.GetXYCords(currentDataEntry, cameraY);
-					if (AedatUtilities.GetEventType(currentDataEntry)) // ON event
+					if (AedatUtilities.GetEventType(currentDataEntry)) 
 					{
-						AedatUtilities.setPixel(ref currentFrame, XY[0], XY[1], onColor.Color, cameraX);
+						AedatUtilities.setPixel(ref currentFrame, XY[0], XY[1], onColor.Color, cameraX); // ON event
 					}
-					else	// OFF event
+					else
 					{
-						AedatUtilities.setPixel(ref currentFrame, XY[0], XY[1], offColor.Color, cameraX);
+						AedatUtilities.setPixel(ref currentFrame, XY[0], XY[1], offColor.Color, cameraX); // OFF event
 					}
+
 					if(lastTime == -999999)
 					{
 						lastTime = timeStamp;
@@ -171,11 +174,15 @@ namespace AEDAT_File_Reader
 
 							SoftwareBitmap outputBitmap = SoftwareBitmap.CreateCopyFromBuffer(b.PixelBuffer, BitmapPixelFormat.Bgra8, b.PixelWidth, b.PixelHeight, BitmapAlphaMode.Premultiplied);
 							CanvasBitmap bitmap2 = CanvasBitmap.CreateFromSoftwareBitmap(CanvasDevice.GetSharedDevice(), outputBitmap);
-							MediaClip mediaClip = MediaClip.CreateFromSurface(bitmap2, TimeSpan.FromSeconds(0.0333f));
+							
+							// Set playback framerate
+							MediaClip mediaClip = MediaClip.CreateFromSurface(bitmap2, TimeSpan.FromSeconds(playback_frametime));
 	
 							composition.Clips.Add(mediaClip);
 							frameCount++;
-							if (frameCount > maxFrames)
+
+							// Stop adding frames to video if max frames has been hit
+							if (frameCount >= maxFrames)
 							{
 								break;
 							}
@@ -187,29 +194,28 @@ namespace AEDAT_File_Reader
 				}
 
 				// Create video file
-				var savePicker = new Windows.Storage.Pickers.FileSavePicker();
-				savePicker.SuggestedStartLocation =
-					Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
+				var savePicker = new FileSavePicker
+				{
+					SuggestedStartLocation = PickerLocationId.DocumentsLibrary
+				};
+
 				// Dropdown of file types the user can save the file as
 				savePicker.FileTypeChoices.Add("MP4", new List<string>() { ".mp4" });
+
 				// Default file name if the user does not type one in or select a file to replace
 				savePicker.SuggestedFileName = file.DisplayName;
-				//var sampleFile = await ApplicationData.Current.LocalFolder.CreateFileAsync("WBVideo.mp4",Windows.Storage.CreationCollisionOption.ReplaceExisting);
-				Windows.Storage.StorageFile sampleFile = await savePicker.PickSaveFileAsync();
+
+				StorageFile sampleFile = await savePicker.PickSaveFileAsync();
 				await composition.SaveAsync(sampleFile);
 				composition = await MediaComposition.LoadAsync(sampleFile);
 
+				// Get a generic encoding profile and set the width and height to the camera's width and height
 				MediaEncodingProfile _MediaEncodingProfile = MediaEncodingProfile.CreateMp4(VideoEncodingQuality.HD720p);
-
-
-				////var encoding = new Windows.Media.MediaProperties.MediaEncodingProfile();
-				////encoding.Video.Bitrate = 10;
 				_MediaEncodingProfile.Video.Width = cameraX;
 				_MediaEncodingProfile.Video.Height = cameraY;
 				//_MediaEncodingProfile.Video.Bitrate = 300000000;
 
 				await composition.RenderToFileAsync(sampleFile, MediaTrimmingPreference.Precise, _MediaEncodingProfile);
-				//await composition.RenderToFileAsync(sampleFile);
 				mediaSimple.Source = new Uri("ms-appx:///WBVideo.mp4");
 			}
 		}

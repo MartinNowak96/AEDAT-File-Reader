@@ -115,6 +115,9 @@
     <Compile Include="Models\Event.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="summaryView.xaml.cs" />
+    <Compile Include="TestPage.xaml.cs">
+      <DependentUpon>TestPage.xaml</DependentUpon>
+    </Compile>
     <Compile Include="videoPage.xaml.cs">
       <DependentUpon>videoPage.xaml</DependentUpon>
     </Compile>
@@ -156,6 +159,10 @@
     <Page Include="summaryView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="TestPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="videoPage.xaml">
       <SubType>Designer</SubType>

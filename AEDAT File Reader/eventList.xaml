@@ -48,8 +48,18 @@
 
         <Grid Background="#2f2f2f">
             <StackPanel Orientation="Horizontal">
-                <Button x:Name="selectFile" Tapped="selectFile_Tapped" >Select A File</Button>
-                <Button Margin="5,0,0,0" x:Name="export" Tapped="export_Tapped"  >Export to CSV</Button>
+				<Button x:Name="selectFile" Tapped="selectFile_Tapped" >
+					<StackPanel Orientation="Horizontal">
+						<TextBlock Text="&#xE8E5;" FontFamily="Segoe MDL2 Assets" Margin="0,2,0,0" />
+					<TextBlock Margin="8,0,0,0" >Select A File</TextBlock>
+					</StackPanel>
+					</Button>
+                <Button Margin="5,0,0,0" x:Name="export" Tapped="export_Tapped"  >
+					<StackPanel Orientation="Horizontal">
+						<TextBlock Text="&#xE74E;" FontFamily="Segoe MDL2 Assets" Margin="0,2,0,0" />
+						<TextBlock Margin="8,0,0,0" >Export To CSV</TextBlock>
+					</StackPanel>
+				</Button>
             </StackPanel>
         </Grid>
         

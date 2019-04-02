@@ -68,7 +68,7 @@ namespace AEDAT_File_Reader
                         using (var dataWriter = new Windows.Storage.Streams.DataWriter(outputStream))
                         {
                             dataWriter.WriteString("On/Off, X, Y, Timestamp\n");
-                            foreach (Event item in tableData)
+                            foreach (Event item in dataGrid.ItemsSource)
                             {
                                 dataWriter.WriteString(item.onOff + "," + item.x + "," + item.y + "," + item.time + "\n");
                             }

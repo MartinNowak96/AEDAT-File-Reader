@@ -25,13 +25,18 @@
 			<RowDefinition Height="*"/>
 		</Grid.RowDefinitions>
 
-		<Grid Background="#2f2f2f"  >
+		<Grid Background="#2f2f2f"   >
 			<StackPanel Orientation="Horizontal">
-				<Button x:Name="SelectFile" Tapped="SelectFile_Tapped" >Select A File</Button>
+				<Button x:Name="SelectFile" Tapped="SelectFile_Tapped" >
+					<StackPanel Orientation="Horizontal">
+						<TextBlock Text="&#xE8E5;" FontFamily="Segoe MDL2 Assets" Margin="0,2,0,0" />
+						<TextBlock Margin="8,0,0,0" >Select A File</TextBlock>
+					</StackPanel>
+				</Button>
 			</StackPanel>
 		</Grid>
 
-		<Grid Grid.Row="1" >
+		<Grid Grid.Row="1" Padding="8" >
 			<StackPanel>
 				<TextBox x:Name="frameTimeTB" InputScope="Number" Header="Time per frame (uS):" 
 					 Height="60" Width="200" HorizontalAlignment="Left" VerticalAlignment="Top" Text="1000"/>
@@ -44,8 +49,10 @@
 					</StackPanel>
 					
 				</StackPanel>
-				<ComboBox x:Name="onColorCombo" ItemsSource="{x:Bind colors}" ItemTemplate="{StaticResource colorCombo}" Header="On Event Colors"   > </ComboBox>
+				<ComboBox x:Name="onColorCombo" ItemsSource="{x:Bind colors}" ItemTemplate="{StaticResource colorCombo}" Header="On Event Colors"   ></ComboBox>
 				<ComboBox x:Name="offColorCombo" ItemsSource="{x:Bind colors}" ItemTemplate="{StaticResource colorCombo}" Header="Off Event Colors" ></ComboBox>
+
+				
 
 			</StackPanel>
 			

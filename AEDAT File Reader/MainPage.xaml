@@ -37,10 +37,34 @@
   
         <NavigationView IsBackButtonVisible="Collapsed" Grid.Row="1" IsPaneOpen="False" AlwaysShowHeader="False" CompactPaneLength="48" OpenPaneLength="225" x:Name="nav" ItemInvoked="nav_ItemInvoked">
             <NavigationView.MenuItems>
-                <NavigationViewItem Content="Summary" x:Name="summary" />
-                <NavigationViewItem Content="Events" x:Name="events" />
-            <NavigationViewItem Content="Event Summaries" x:Name="eventSummaries" />
-			<NavigationViewItem Content="Video" x:Name="video" />
+			<NavigationViewItem Content="Summary" x:Name="summary" >
+				<NavigationViewItem.Icon>
+					<FontIcon Glyph="&#xE7B8;" FontFamily="Segoe MDL2 Assets" />
+				</NavigationViewItem.Icon>
+			</NavigationViewItem>
+			<NavigationViewItem Content="Events" x:Name="events" >
+				<NavigationViewItem.Icon>
+					<FontIcon Glyph="&#xE943;" FontFamily="Segoe MDL2 Assets" />
+				</NavigationViewItem.Icon>
+			</NavigationViewItem>
+			<NavigationViewItem Content="Event Summaries" x:Name="eventSummaries">
+				<NavigationViewItem.Icon>
+					<FontIcon Glyph="&#xE799;" FontFamily="Segoe MDL2 Assets" />
+				</NavigationViewItem.Icon>
+				
+			</NavigationViewItem>
+			<NavigationViewItem Content="Video" x:Name="video">
+
+				<NavigationViewItem.Icon>
+					<FontIcon Glyph="&#xE714;" FontFamily="Segoe MDL2 Assets" />
+				</NavigationViewItem.Icon>
+
+			</NavigationViewItem>
+			<NavigationViewItem Content="Testing" x:Name="test" >
+				<NavigationViewItem.Icon>
+					<FontIcon Glyph="&#xE7BA;" FontFamily="Segoe MDL2 Assets" />
+				</NavigationViewItem.Icon>
+			</NavigationViewItem>
 		</NavigationView.MenuItems>
 
         <Grid>
