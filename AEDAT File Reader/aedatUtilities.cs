@@ -16,12 +16,21 @@ namespace AEDAT_File_Reader
         public readonly string cameraName;
         public readonly ushort cameraX;
         public readonly ushort cameraY;
+        //int[] bitsXY;
 
         public CameraParameters(ushort cameraX, ushort cameraY, string cameraName)
         {
             this.cameraX = cameraX;
             this.cameraY = cameraY;
             this.cameraName = cameraName;
+            //if(cameraName.name == "128")
+            //{
+            //    bitsXY = [2];
+            //}
+            //else
+            //{
+            //    bitsXY = [3];
+            //}
         }
 
         public CameraParameters(ushort cameraX, ushort cameraY)
@@ -93,7 +102,8 @@ namespace AEDAT_File_Reader
         /// <param name="search"></param>
         /// <param name="fileBytes"></param>
         /// <returns>The line searched for, if found</returns>
-        public static string FindLineInHeader(byte[] search, ref byte[] fileBytes) {
+        public static string FindLineInHeader(byte[] search, ref byte[] fileBytes)
+        {
             bool foundSearch = false;
             int checkLength = search.Length;
             byte[] currentCheckBytes = new byte[checkLength];
@@ -155,8 +165,8 @@ namespace AEDAT_File_Reader
         {
             switch (s)
             {
-                case string dvs128 when dvs128.Contains("DVS128"): return new CameraParameters(128, 128);
-                case string dvs240 when dvs240.Contains("DAVIS240"): return new CameraParameters(240, 180);
+                case string dvs128 when dvs128.Contains("DVS128"): return new CameraParameters(128, 128, "DVS128");
+                case string dvs240 when dvs240.Contains("DAVIS240"): return new CameraParameters(240, 180, "DAVIS240");
                 default: return null;
             }
 
@@ -174,19 +184,20 @@ namespace AEDAT_File_Reader
             return ((dataEntry[5] >> 3) & 1) == 1;     //Event type is located in the fourth bit of the sixth byte
         }
 
+
         /// <summary>
         /// Gets the XY coordinates from the provided data entry.
         /// </summary>
         /// <param name="dataEntry"></param>
         /// <returns>Returns a uint16 array containing the XY coordinates.</returns>
-        public static int[] GetXYCords(byte[] dataEntry, int height)
+        public static int[] GetXYCords240(byte[] dataEntry, int height, int width)
         {
             int[] xy = new int[2];
             BitArray bits = new BitArray(dataEntry);
 
             // X
             bool[] cord = new bool[] { bits[44], bits[45], bits[46], bits[47], bits[48], bits[49], bits[50], bits[51], bits[52], bits[53] };
-            xy[0] = BoolArrayToInt(cord);
+            xy[0] = width - BoolArrayToInt(cord);
 
             // Y
             cord = new bool[] { bits[54], bits[55], bits[56], bits[57], bits[58], bits[59], bits[60], bits[61], bits[62] };
@@ -195,29 +206,49 @@ namespace AEDAT_File_Reader
             return xy;
         }
 
-		private static int BoolArrayToInt(bool[] bools) {
-			int word = 0;
+    
 
-			for (int i = 0; i < bools.Length; i++) {
-				if (bools[i])
-				{
-					int twoToPower = (1 << i);
-					word =(word + twoToPower);
-				}
-			}
-			return word;
-		}
+        public static int[] GetXYCords128(byte[] dataEntry, int height, int width )
+        {
+            int[] xy = new int[2];
+            BitArray bits = new BitArray(dataEntry);
 
-		public static  async Task< List<Event>> GetEvents(StorageFile file)
-		{
-			
-			byte[] result  = await readToBytes(file);      // All of the bytes in the AEDAT file loaded into an array
-			
-			List<Event> tableData = new List<Event>();
-			const int dataEntrySize = 8;            // Number of elements in the data entry
+            // X
+            bool[] cord = new bool[] { bits[33], bits[34], bits[35], bits[36], bits[37], bits[38], bits[39]};
+            xy[0] = width - BoolArrayToInt(cord);
 
-			byte[] currentDataEntry = new byte[dataEntrySize];
-            
+            // Y
+            cord = new bool[] { bits[40], bits[41], bits[42], bits[43], bits[44], bits[45], bits[46]};
+            xy[1] = height - BoolArrayToInt(cord);
+
+            return xy;
+        }
+
+        private static int BoolArrayToInt(bool[] bools)
+        {
+            int word = 0;
+
+            for (int i = 0; i < bools.Length; i++)
+            {
+                if (bools[i])
+                {
+                    int twoToPower = (1 << i);
+                    word = (word + twoToPower);
+                }
+            }
+            return word;
+        }
+
+        public static async Task<List<Event>> GetEvents(StorageFile file)
+        {
+
+            byte[] result = await readToBytes(file);      // All of the bytes in the AEDAT file loaded into an array
+
+            List<Event> tableData = new List<Event>();
+            const int dataEntrySize = 8;            // Number of elements in the data entry
+
+            byte[] currentDataEntry = new byte[dataEntrySize];
+
             string cameraTypeSearch = AedatUtilities.FindLineInHeader(AedatUtilities.hardwareInterfaceCheck, ref result);
             CameraParameters cam = AedatUtilities.ParseCameraModel(cameraTypeSearch);
             if (cam is null)
@@ -231,58 +262,83 @@ namespace AEDAT_File_Reader
 
                 return null;
             }
-            
+
             int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref result);
-            // TODO: handle 128 differently
-			int timeStamp = 0;
-			for (int i = endOfHeaderIndex; i < result.Count() - 1; i += 8)
-			{
-				for (int j = 7; j > -1; j--)
-				{
-					currentDataEntry[j] = result[i + j];
 
-				}
-				Array.Reverse(currentDataEntry);
-				timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes
+            int timeStamp = 0;
 
-				int[] XY = AedatUtilities.GetXYCords(currentDataEntry, cam.cameraY);
-
-				tableData.Add(new Event { time = timeStamp, onOff = AedatUtilities.GetEventType(currentDataEntry), x = XY[0], y = XY[1] });
+            Func<byte[], int, int, int[]> getXY = AedatUtilities.GetXY_Cam(cam.cameraName);
 
 
-			}
+            for (int i = endOfHeaderIndex; i < result.Count() - 1; i += 8)
+            {
+                for (int j = 7; j > -1; j--)
+                {
+                    currentDataEntry[j] = result[i + j];
 
-			return tableData;
+                }
+                Array.Reverse(currentDataEntry);
+                timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes
+
+                int[] XY = getXY(currentDataEntry, cam.cameraY, cam.cameraX);
+                tableData.Add(new Event { time = timeStamp, onOff = AedatUtilities.GetEventType(currentDataEntry), x = XY[0], y = XY[1] });
 
 
-		}
+            }
 
-		public static async Task<byte[]> readToBytes(StorageFile file)
-		{
-			byte[] result;
-			using (Stream stream = await file.OpenStreamForReadAsync())
-			{
-				using (var memoryStream = new MemoryStream())
-				{
-					stream.CopyTo(memoryStream);
-					result = memoryStream.ToArray();
-				}
-			}
 
-			return result;
-		}
 
-		public static void setPixel(ref byte[] pixels, int x, int y, byte[] rgba, int imageWidth)
-		{
+
+            return tableData;
+
+
+        }
+
+        public static async Task<byte[]> readToBytes(StorageFile file)
+        {
+            byte[] result;
+            using (Stream stream = await file.OpenStreamForReadAsync())
+            {
+                using (var memoryStream = new MemoryStream())
+                {
+                    stream.CopyTo(memoryStream);
+                    result = memoryStream.ToArray();
+                }
+            }
+
+            return result;
+        }
+
+        public static Func<byte[], int, int, int[]> GetXY_Cam(string cameraName)
+        {
+            Func<byte[], int, int, int[]> getXY;
+            switch (cameraName)
+            {
+                case "DVS128":
+                    getXY = AedatUtilities.GetXYCords128;
+                    break;
+                case "DAVIS240":
+                    getXY = AedatUtilities.GetXYCords240;
+                    break;
+                default:
+                    getXY = AedatUtilities.GetXYCords240;
+                    break;
+            }
+            return getXY;
+        }
+
+        public static void setPixel(ref byte[] pixels, int x, int y, byte[] rgba, int imageWidth)
+        {
 
             y = y - 1;
+            x = x - 1;
 
-			int startingPoint = (((imageWidth * y) + x)  * 4);
+            int startingPoint = (((imageWidth * y) + x) * 4);
 
-			pixels[startingPoint] = rgba[2];
-			pixels[startingPoint + 1] = rgba[1];
-			pixels[startingPoint + 2] = rgba[0];
-			pixels[startingPoint + 3] = rgba[3];
-		}
-	}
+            pixels[startingPoint] = rgba[2];
+            pixels[startingPoint + 1] = rgba[1];
+            pixels[startingPoint + 2] = rgba[0];
+            pixels[startingPoint + 3] = rgba[3];
+        }
+    }
 }

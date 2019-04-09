@@ -38,15 +38,19 @@
 
 		<Grid Grid.Row="1" Padding="8" >
 			<StackPanel>
-				<TextBox x:Name="frameTimeTB" InputScope="Number" Header="Time per frame (uS):" 
+                <StackPanel Orientation="Horizontal">
+                    <TextBox x:Name="frameTimeTB" InputScope="Number" Header="Time per frame (uS):" 
 					 Height="60" Width="200" HorizontalAlignment="Left" VerticalAlignment="Top" Text="1000"/>
+                    <CheckBox   Margin="10,23,0,0" x:Name="realTimeCheckbox" Content="Real Time Playback" Checked="RealTimeCheckbox_Checked" Unchecked="RealTimeCheckbox_Unchecked"  ></CheckBox>
+                </StackPanel>
+				
 				<StackPanel Orientation="Horizontal" >
 					<TextBox x:Name="maxFramesTB" InputScope="Number" Header="Maximum number of frames:" 
 					 Height="60" Width="200" HorizontalAlignment="Left" VerticalAlignment="Top"  Text="100" />
-					<StackPanel Orientation="Horizontal"  Margin="10,25,0,0">
-						<CheckBox  x:Name="allFrameCheckBox" Checked="AllFrameCheckBox_Checked" Content="All Frames" Unchecked="AllFrameCheckBox_Unchecked"   ></CheckBox>
+		
+                    <CheckBox  x:Name="allFrameCheckBox" Margin="10,23,0,0" Checked="AllFrameCheckBox_Checked" Content="All Frames" Unchecked="AllFrameCheckBox_Unchecked"   ></CheckBox>
 					
-					</StackPanel>
+				
 					
 				</StackPanel>
 				<ComboBox x:Name="onColorCombo" ItemsSource="{x:Bind colors}" ItemTemplate="{StaticResource colorCombo}" Header="On Event Colors"   ></ComboBox>

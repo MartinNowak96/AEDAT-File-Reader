@@ -57,18 +57,24 @@ namespace AEDAT_File_Reader
             };
             InitializeComponent();
 		}
-		string previousValue = "100";
+		string previousValueMaxFrame = "100";
+        string previousValueTimePerFrame = "1000";
 
-		
-			private async void SelectFile_Tapped(object sender, TappedRoutedEventArgs e)
+        private async void SelectFile_Tapped(object sender, TappedRoutedEventArgs e)
 		{
-			int frameTime;              // The amount of time per frame in uS (30 fps = 33333)
+			int frameTime = 33333;              // The amount of time per frame in uS (30 fps = 33333)
 			int maxFrames;             // Max number of frames in the reconstructed video
-
-			// Check for invalid input
-			try
+            if (realTimeCheckbox.IsChecked == true)
+            {
+                frameTime = 33333;
+            }
+            // Check for invalid input
+            try
 			{
-				frameTime = Int32.Parse(frameTimeTB.Text);
+                if (realTimeCheckbox.IsChecked == false)
+                {
+                    frameTime = Int32.Parse(frameTimeTB.Text);
+                }
 				if (allFrameCheckBox.IsChecked == true)
 				{
 					maxFrames = 2147483647;
@@ -92,7 +98,9 @@ namespace AEDAT_File_Reader
 				return;
 			}
 
-			if (maxFrames <= 0 || frameTime <= 0)
+            
+
+            if (maxFrames <= 0 || frameTime <= 0)
 			{
 				ContentDialog noWifiDialog = new ContentDialog()
 				{
@@ -104,6 +112,9 @@ namespace AEDAT_File_Reader
 				await noWifiDialog.ShowAsync();
 				return;
 			}
+
+            
+
 
 			// Grab ON and OFF colors from comboBox
 			Colors onColor = onColorCombo.SelectedItem as Colors;
@@ -135,8 +146,10 @@ namespace AEDAT_File_Reader
                     return;
                 }
 
-				// Initilize writeable bitmap
-				WriteableBitmap bitmap = new WriteableBitmap(cam.cameraX, cam.cameraY);
+                Func<byte[], int, int, int[]> getXY = AedatUtilities.GetXY_Cam(cam.cameraName);
+
+                // Initilize writeable bitmap
+                WriteableBitmap bitmap = new WriteableBitmap(cam.cameraX, cam.cameraY);
 				InMemoryRandomAccessStream inMemoryRandomAccessStream = new InMemoryRandomAccessStream();
 				BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, inMemoryRandomAccessStream);
 				Stream pixelStream = bitmap.PixelBuffer.AsStream();
@@ -159,7 +172,7 @@ namespace AEDAT_File_Reader
 					Array.Reverse(currentDataEntry);
 					timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes, uS
 
-					int[] XY = AedatUtilities.GetXYCords(currentDataEntry, cam.cameraY);
+					int[] XY = getXY(currentDataEntry, cam.cameraY, cam.cameraX);
 					if (AedatUtilities.GetEventType(currentDataEntry)) 
 					{
 						AedatUtilities.setPixel(ref currentFrame, XY[0], XY[1], onColor.Color, cam.cameraX); // ON event
@@ -232,7 +245,7 @@ namespace AEDAT_File_Reader
 
 		private void AllFrameCheckBox_Checked(object sender, Windows.UI.Xaml.RoutedEventArgs e)
 		{
-			this.previousValue = maxFramesTB.Text;
+			this.previousValueMaxFrame = maxFramesTB.Text;
 			maxFramesTB.IsReadOnly = true;
 			maxFramesTB.IsEnabled = false;
 			maxFramesTB.Text = "∞";
@@ -240,7 +253,7 @@ namespace AEDAT_File_Reader
 
 		private void AllFrameCheckBox_Unchecked(object sender, Windows.UI.Xaml.RoutedEventArgs e)
 		{
-			maxFramesTB.Text = this.previousValue;
+			maxFramesTB.Text = this.previousValueMaxFrame;
 			maxFramesTB.IsReadOnly = false;
 			maxFramesTB.IsEnabled = true;
 		}
@@ -250,5 +263,20 @@ namespace AEDAT_File_Reader
 			onColorCombo.SelectedIndex = 0;
 			offColorCombo.SelectedIndex = 1;
 		}
-	}
+
+        private void RealTimeCheckbox_Checked(object sender, Windows.UI.Xaml.RoutedEventArgs e)
+        {
+            this.previousValueTimePerFrame = frameTimeTB.Text;
+            frameTimeTB.Text = "Real Time";
+            frameTimeTB.IsReadOnly = true;
+            frameTimeTB.IsEnabled = false;
+        }
+
+        private void RealTimeCheckbox_Unchecked(object sender, Windows.UI.Xaml.RoutedEventArgs e)
+        {
+            frameTimeTB.Text= this.previousValueTimePerFrame ;
+            frameTimeTB.IsReadOnly = false;
+            frameTimeTB.IsEnabled = true;
+        }
+    }
 }
