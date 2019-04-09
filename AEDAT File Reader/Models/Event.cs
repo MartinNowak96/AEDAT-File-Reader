@@ -10,8 +10,8 @@ namespace AEDAT_File_Reader.Models
     public class Event
     {
         public bool onOff { get; set; }
-        public UInt16 x { get; set; }
-        public UInt16 y { get; set; }
+        public int x { get; set; }
+        public int y { get; set; }
         public int time { get; set; }
     }
 

@@ -39,24 +39,27 @@ namespace AEDAT_File_Reader
 			picker.FileTypeFilter.Add(".AEDAT");
 
 			var file = await picker.PickSingleFileAsync();
+            if (file is null) return;
 			byte[] aedatFile = await AedatUtilities.readToBytes(file);
 
 			string result = AedatUtilities.FindLineInHeader(AedatUtilities.hardwareInterfaceCheck, ref aedatFile);
 
-			if (result.Contains("DAVIS240"))
-			{
-				result = "Found DAVIS240";
-			}
+            CameraParameters cameraParam = AedatUtilities.ParseCameraModel(result);
 
-			if (result.Contains("DVS128"))
-			{
-				result = "Found DVS128";
-			}
+            if (cameraParam == null)
+            {
+                ContentDialog AEEE = new ContentDialog()
+                {
+                    Title = "EEE",
+                    Content = "AEEEE",
+                    CloseButtonText = "Close"
+                };
+            }
 
 			ContentDialog invaldInputDialogue = new ContentDialog()
 			{
 				Title = "Testing...",
-				Content = result,
+				Content = cameraParam.cameraX,
 				CloseButtonText = "Close"
 			};
 

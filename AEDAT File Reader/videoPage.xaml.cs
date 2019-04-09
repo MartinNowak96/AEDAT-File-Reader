@@ -46,14 +46,16 @@ namespace AEDAT_File_Reader
 		public ObservableCollection<Colors> colors;
 		public videoPage()
 		{
-			
-			colors = new ObservableCollection<Colors>();
-			colors.Add(new Colors("Green",Colors.Green));
-			colors.Add(new Colors("Red", Colors.Red));
-			colors.Add(new Colors("Blue", Colors.Blue));
-			colors.Add(new Colors("Gray", Colors.Gray));
-			colors.Add(new Colors("White", Colors.White));
-			InitializeComponent();
+
+            colors = new ObservableCollection<Colors>
+            {
+                new Colors("Green", Colors.Green),
+                new Colors("Red", Colors.Red),
+                new Colors("Blue", Colors.Blue),
+                new Colors("Gray", Colors.Gray),
+                new Colors("White", Colors.White)
+            };
+            InitializeComponent();
 		}
 		string previousValue = "100";
 
@@ -119,18 +121,27 @@ namespace AEDAT_File_Reader
 
 			if (file != null)
 			{
+                byte[] aedatFile = await AedatUtilities.readToBytes(file);
+                string cameraTypeSearch = AedatUtilities.FindLineInHeader(AedatUtilities.hardwareInterfaceCheck, ref aedatFile);
+                CameraParameters cam = AedatUtilities.ParseCameraModel(cameraTypeSearch);
+                if (cam is null) {
+                    ContentDialog invalidData = new ContentDialog()
+                    {
+                        Title = "Error",
+                        Content = "Could not parse camera parameters.",
+                        CloseButtonText = "Close"
+                    };
 
-				ushort cameraX = 240;		// Camera X resolution in pixels
-				ushort cameraY = 180;       // Camera Y resolution in pixels
+                    return;
+                }
 
 				// Initilize writeable bitmap
-				WriteableBitmap bitmap = new WriteableBitmap(cameraX, cameraY);
+				WriteableBitmap bitmap = new WriteableBitmap(cam.cameraX, cam.cameraY);
 				InMemoryRandomAccessStream inMemoryRandomAccessStream = new InMemoryRandomAccessStream();
 				BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, inMemoryRandomAccessStream);
 				Stream pixelStream = bitmap.PixelBuffer.AsStream();
 				byte[] currentFrame = new byte[pixelStream.Length];
 
-				byte[] aedatFile = await AedatUtilities.readToBytes(file);
 				byte[] currentDataEntry = new byte[AedatUtilities.dataEntrySize];
 				int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref aedatFile);
 				int lastTime = -999999;
@@ -148,14 +159,14 @@ namespace AEDAT_File_Reader
 					Array.Reverse(currentDataEntry);
 					timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes, uS
 
-					UInt16[] XY = AedatUtilities.GetXYCords(currentDataEntry, cameraY);
+					int[] XY = AedatUtilities.GetXYCords(currentDataEntry, cam.cameraY);
 					if (AedatUtilities.GetEventType(currentDataEntry)) 
 					{
-						AedatUtilities.setPixel(ref currentFrame, XY[0], XY[1], onColor.Color, cameraX); // ON event
+						AedatUtilities.setPixel(ref currentFrame, XY[0], XY[1], onColor.Color, cam.cameraX); // ON event
 					}
 					else
 					{
-						AedatUtilities.setPixel(ref currentFrame, XY[0], XY[1], offColor.Color, cameraX); // OFF event
+						AedatUtilities.setPixel(ref currentFrame, XY[0], XY[1], offColor.Color, cam.cameraX); // OFF event
 					}
 
 					if(lastTime == -999999)
@@ -166,7 +177,7 @@ namespace AEDAT_File_Reader
 					{
 						if (lastTime + frameTime <= timeStamp) // Collected events within specified timeframe, add frame to video
 						{
-							WriteableBitmap b = new WriteableBitmap(cameraX, cameraY);
+							WriteableBitmap b = new WriteableBitmap(cam.cameraX, cam.cameraY);
 							using (Stream stream = b.PixelBuffer.AsStream())
 							{
 								await stream.WriteAsync(currentFrame, 0, currentFrame.Length);
@@ -211,9 +222,8 @@ namespace AEDAT_File_Reader
 
 				// Get a generic encoding profile and set the width and height to the camera's width and height
 				MediaEncodingProfile _MediaEncodingProfile = MediaEncodingProfile.CreateMp4(VideoEncodingQuality.HD720p);
-				_MediaEncodingProfile.Video.Width = cameraX;
-				_MediaEncodingProfile.Video.Height = cameraY;
-				//_MediaEncodingProfile.Video.Bitrate = 300000000;
+				_MediaEncodingProfile.Video.Width = cam.cameraX;
+                _MediaEncodingProfile.Video.Height = cam.cameraY;
 
 				await composition.RenderToFileAsync(sampleFile, MediaTrimmingPreference.Precise, _MediaEncodingProfile);
 				mediaSimple.Source = new Uri("ms-appx:///WBVideo.mp4");
