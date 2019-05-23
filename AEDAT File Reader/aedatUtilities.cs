@@ -23,14 +23,6 @@ namespace AEDAT_File_Reader
             this.cameraX = cameraX;
             this.cameraY = cameraY;
             this.cameraName = cameraName;
-            //if(cameraName.name == "128")
-            //{
-            //    bitsXY = [2];
-            //}
-            //else
-            //{
-            //    bitsXY = [3];
-            //}
         }
 
         public CameraParameters(ushort cameraX, ushort cameraY)
@@ -242,10 +234,10 @@ namespace AEDAT_File_Reader
         public static async Task<List<Event>> GetEvents(StorageFile file)
         {
 
-            byte[] result = await readToBytes(file);      // All of the bytes in the AEDAT file loaded into an array
+            byte[] result = await readToBytes(file);	// All of the bytes in the AEDAT file loaded into an array
 
             List<Event> tableData = new List<Event>();
-            const int dataEntrySize = 8;            // Number of elements in the data entry
+            const int dataEntrySize = 8;				// Number of elements in the data entry
 
             byte[] currentDataEntry = new byte[dataEntrySize];
 
@@ -286,11 +278,7 @@ namespace AEDAT_File_Reader
 
             }
 
-
-
-
             return tableData;
-
 
         }
 
