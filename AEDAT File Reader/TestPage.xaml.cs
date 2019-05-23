@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -39,8 +40,8 @@ namespace AEDAT_File_Reader
 			picker.FileTypeFilter.Add(".AEDAT");
 
 			var file = await picker.PickSingleFileAsync();
-            if (file is null) return;
-			byte[] aedatFile = await AedatUtilities.readToBytes(file);
+            if (file == null) return;
+			byte[] aedatFile = await AedatUtilities.ReadToBytes(file);
 
 			string result = AedatUtilities.FindLineInHeader(AedatUtilities.hardwareInterfaceCheck, ref aedatFile);
 
@@ -54,12 +55,13 @@ namespace AEDAT_File_Reader
                     Content = "AEEEE",
                     CloseButtonText = "Close"
                 };
+				await AEEE.ShowAsync();
             }
 
 			ContentDialog invaldInputDialogue = new ContentDialog()
 			{
 				Title = "Testing...",
-				Content = cameraParam.cameraX,
+				Content = cameraParam.cameraName,
 				CloseButtonText = "Close"
 			};
 
@@ -67,5 +69,55 @@ namespace AEDAT_File_Reader
 
 		}
 
+		private async void ReadTest_Tapped(object sender, TappedRoutedEventArgs e)
+		{
+			var picker = new Windows.Storage.Pickers.FileOpenPicker
+			{
+				ViewMode = Windows.Storage.Pickers.PickerViewMode.Thumbnail,
+				SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.PicturesLibrary
+			};
+			picker.FileTypeFilter.Add(".AEDAT");
+
+
+			var file = await picker.PickSingleFileAsync();
+			if (file == null) return;
+
+			ContentDialog readTestDialog = new ContentDialog()
+			{
+				Title = "Testing",
+				Content = file.Path,
+				CloseButtonText = "Close"
+			};
+			await readTestDialog.ShowAsync();
+		}
+
+		private async void ReadToBytesTime_Tapped(object sender, TappedRoutedEventArgs e)
+		{
+			long readToBytes_Time;
+			var picker = new Windows.Storage.Pickers.FileOpenPicker
+			{
+				ViewMode = Windows.Storage.Pickers.PickerViewMode.Thumbnail,
+				SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.PicturesLibrary
+			};
+			picker.FileTypeFilter.Add(".AEDAT");
+
+
+			var file = await picker.PickSingleFileAsync();
+			if (file == null) return;
+
+			Stopwatch sw = new Stopwatch();
+			sw.Start();
+				byte[] result = await AedatUtilities.ReadToBytes(file);    // All of the bytes in the AEDAT file loaded into an array
+			sw.Stop();
+			readToBytes_Time = sw.ElapsedMilliseconds;
+
+			ContentDialog readTimeDialog = new ContentDialog()
+			{
+				Title = "Testing",
+				Content = "Read to bytes time: " + readToBytes_Time + " ms",
+				CloseButtonText = "Close"
+			};
+			await readTimeDialog.ShowAsync();
+		}
 	}
 }

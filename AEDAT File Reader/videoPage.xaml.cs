@@ -132,7 +132,7 @@ namespace AEDAT_File_Reader
 
 			if (file != null)
 			{
-                byte[] aedatFile = await AedatUtilities.readToBytes(file);
+                byte[] aedatFile = await AedatUtilities.ReadToBytes(file);
                 string cameraTypeSearch = AedatUtilities.FindLineInHeader(AedatUtilities.hardwareInterfaceCheck, ref aedatFile);
                 CameraParameters cam = AedatUtilities.ParseCameraModel(cameraTypeSearch);
                 if (cam is null) {
@@ -175,11 +175,11 @@ namespace AEDAT_File_Reader
 					int[] XY = getXY(currentDataEntry, cam.cameraY, cam.cameraX);
 					if (AedatUtilities.GetEventType(currentDataEntry)) 
 					{
-						AedatUtilities.setPixel(ref currentFrame, XY[0], XY[1], onColor.Color, cam.cameraX); // ON event
+						AedatUtilities.SetPixel(ref currentFrame, XY[0], XY[1], onColor.Color, cam.cameraX); // ON event
 					}
 					else
 					{
-						AedatUtilities.setPixel(ref currentFrame, XY[0], XY[1], offColor.Color, cam.cameraX); // OFF event
+						AedatUtilities.SetPixel(ref currentFrame, XY[0], XY[1], offColor.Color, cam.cameraX); // OFF event
 					}
 
 					if(lastTime == -999999)

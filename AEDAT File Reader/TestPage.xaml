@@ -8,7 +8,19 @@
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Grid>
-		<Button x:Name="SearchTest" Tapped="SearchTest_Tapped" >SearchTest</Button>
+    <Grid Margin="30,15" Padding="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <Button Grid.Row="1" x:Name="SearchTest" Tapped="SearchTest_Tapped" >SearchTest</Button>
+        <Button Grid.Row="2" x:Name="ReadTest" Tapped="ReadTest_Tapped" >ReadTest</Button>
+        <Button Grid.Row="3" x:Name="ReadTime" Tapped="ReadToBytesTime_Tapped" >ReadBytesTime</Button>
 	</Grid>
 </Page>

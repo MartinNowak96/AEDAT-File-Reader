@@ -9,6 +9,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.Storage;
+using Windows.Storage.AccessCache;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
@@ -47,17 +48,45 @@ namespace AEDAT_File_Reader
 			}
 		}
 
-        private void export_Tapped(object sender, TappedRoutedEventArgs e)
+		enum ExportMode { Single, Bulk };
+		ExportMode currentExportMode;
+
+        private void Export_Tapped(object sender, TappedRoutedEventArgs e)
         {
+
+			switch ((sender as Button).Name)
+			{
+				case "singleExport":
+					currentExportMode = ExportMode.Single;
+					break;
+				case "bulkExport":
+					currentExportMode = ExportMode.Bulk;
+					break;
+				default:
+					return;
+			}
 			exportSettings.IsOpen = true;
         }
 
 		private async void ExportFromPopUp_Tapped(object sender, TappedRoutedEventArgs e)
 		{
+			switch (currentExportMode) {
+				case ExportMode.Single:
+					await SingleExport();
+					break;
+				case ExportMode.Bulk:
+					await BulkExport();
+					break;
+			}
+			
+		}
+
+		private async System.Threading.Tasks.Task SingleExport()
+		{
 			var savePicker = new Windows.Storage.Pickers.FileSavePicker
 			{
 				SuggestedStartLocation =
-				Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary
+							Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary
 			};
 
 			// Dropdown of file types the user can save the file as
@@ -65,13 +94,18 @@ namespace AEDAT_File_Reader
 			// Default file name if the user does not type one in or select a file to replace
 			savePicker.SuggestedFileName = "New Document";
 
-			Windows.Storage.StorageFile file = await savePicker.PickSaveFileAsync();
+			StorageFile file = await savePicker.PickSaveFileAsync();
+			await PrepAndSaveCSV(file);
+		}
+
+		private async System.Threading.Tasks.Task PrepAndSaveCSV(StorageFile file)
+		{
 			if (file != null)
 			{
-				Windows.Storage.Provider.FileUpdateStatus status = await Windows.Storage.CachedFileManager.CompleteUpdatesAsync(file);
+				Windows.Storage.Provider.FileUpdateStatus status = await CachedFileManager.CompleteUpdatesAsync(file);
 				if (status == Windows.Storage.Provider.FileUpdateStatus.Complete)
 				{
-					var stream = await file.OpenAsync(Windows.Storage.FileAccessMode.ReadWrite);
+					var stream = await file.OpenAsync(FileAccessMode.ReadWrite);
 					using (var outputStream = stream.GetOutputStreamAt(0))
 					{
 						using (var dataWriter = new Windows.Storage.Streams.DataWriter(outputStream))
@@ -83,6 +117,53 @@ namespace AEDAT_File_Reader
 
 				}
 			}
+		}
+
+		// TODO: fix crash when csv file alredy exists
+		private async System.Threading.Tasks.Task BulkExport()
+		{
+			// Select CSV save directory
+			var saveFolderPicker = new Windows.Storage.Pickers.FolderPicker();
+			saveFolderPicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.Desktop;
+			saveFolderPicker.FileTypeFilter.Add("*");
+			var saveFolder = await saveFolderPicker.PickSingleFolderAsync();
+			if (saveFolder == null) return;
+
+			// Select CSV files
+			var picker = new Windows.Storage.Pickers.FileOpenPicker
+			{
+				ViewMode = Windows.Storage.Pickers.PickerViewMode.Thumbnail,
+				SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.PicturesLibrary
+			};
+			picker.FileTypeFilter.Add(".AEDAT");
+			var files = await picker.PickMultipleFilesAsync();
+			if (files == null) return;
+
+			foreach (StorageFile file in files)
+			{
+				string fileName = file.Name;
+				// Ignore file if its not an AEDAT file
+				if (!fileName.EndsWith(".aedat"))
+					continue;
+
+				// TODO: decouple GetEvents and GUI stuff
+				dataGrid.ItemsSource = await AedatUtilities.GetEvents(file);
+
+				string saveName = Path.ChangeExtension(fileName, ".csv");
+				StorageFile newCSV = await saveFolder.CreateFileAsync(saveName);
+
+				await PrepAndSaveCSV(newCSV);
+
+			}
+
+			ContentDialog exportComplete = new ContentDialog()
+			{
+				Title = "Done",
+				Content = "Bulk export completed.",
+				CloseButtonText = "Close"
+			};
+			await exportComplete.ShowAsync();
+
 		}
 
 		private async System.Threading.Tasks.Task CreateCSV(Windows.Storage.Streams.IOutputStream outputStream, Windows.Storage.Streams.DataWriter dataWriter)
@@ -117,5 +198,6 @@ namespace AEDAT_File_Reader
 			await dataWriter.StoreAsync();
 			await outputStream.FlushAsync();
 		}
+
 	}
 }

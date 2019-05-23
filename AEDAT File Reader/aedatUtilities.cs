@@ -16,7 +16,6 @@ namespace AEDAT_File_Reader
         public readonly string cameraName;
         public readonly ushort cameraX;
         public readonly ushort cameraY;
-        //int[] bitsXY;
 
         public CameraParameters(ushort cameraX, ushort cameraY, string cameraName)
         {
@@ -36,9 +35,6 @@ namespace AEDAT_File_Reader
 
     public static class AedatUtilities
     {
-        //TODO: GET CAMERA TYPE & GETENDOFHEADERINDEX -> only grab the first 1MB or so
-
-
         public const int dataEntrySize = 8;     // How many bytes is in an AEDAT data entry
 
         // # HardwareInterface:
@@ -177,6 +173,7 @@ namespace AEDAT_File_Reader
         }
 
 
+		// TODO: Combine both GetXYCords functions into one (lambda?)
         /// <summary>
         /// Gets the XY coordinates from the provided data entry.
         /// </summary>
@@ -234,7 +231,7 @@ namespace AEDAT_File_Reader
         public static async Task<List<Event>> GetEvents(StorageFile file)
         {
 
-            byte[] result = await readToBytes(file);	// All of the bytes in the AEDAT file loaded into an array
+            byte[] result = await ReadToBytes(file);	// All of the bytes in the AEDAT file loaded into an array
 
             List<Event> tableData = new List<Event>();
             const int dataEntrySize = 8;				// Number of elements in the data entry
@@ -251,16 +248,16 @@ namespace AEDAT_File_Reader
                     Content = "Could not parse camera parameters.",
                     CloseButtonText = "Close"
                 };
+				await invalidData.ShowAsync();
 
                 return null;
             }
 
             int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref result);
 
-            int timeStamp = 0;
+            int timeStamp;
 
             Func<byte[], int, int, int[]> getXY = AedatUtilities.GetXY_Cam(cam.cameraName);
-
 
             for (int i = endOfHeaderIndex; i < result.Count() - 1; i += 8)
             {
@@ -273,16 +270,14 @@ namespace AEDAT_File_Reader
                 timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes
 
                 int[] XY = getXY(currentDataEntry, cam.cameraY, cam.cameraX);
-                tableData.Add(new Event { time = timeStamp, onOff = AedatUtilities.GetEventType(currentDataEntry), x = XY[0], y = XY[1] });
-
-
+				tableData.Add(new Event { time = timeStamp, onOff = AedatUtilities.GetEventType(currentDataEntry), x = XY[0], y = XY[1] });
             }
 
             return tableData;
 
         }
 
-        public static async Task<byte[]> readToBytes(StorageFile file)
+        public static async Task<byte[]> ReadToBytes(StorageFile file)
         {
             byte[] result;
             using (Stream stream = await file.OpenStreamForReadAsync())
@@ -315,11 +310,11 @@ namespace AEDAT_File_Reader
             return getXY;
         }
 
-        public static void setPixel(ref byte[] pixels, int x, int y, byte[] rgba, int imageWidth)
+        public static void SetPixel(ref byte[] pixels, int x, int y, byte[] rgba, int imageWidth)
         {
 
-            y = y - 1;
-            x = x - 1;
+            y -= 1;
+            x -= 1;
 
             int startingPoint = (((imageWidth * y) + x) * 4);
 

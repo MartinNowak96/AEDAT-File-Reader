@@ -56,12 +56,18 @@
 					<TextBlock Margin="8,0,0,0" >Select A File</TextBlock>
 					</StackPanel>
 					</Button>
-                <Button Margin="5,0,0,0" x:Name="export" Tapped="export_Tapped"  >
+                <Button Margin="5,0,0,0" x:Name="singleExport" Tapped="Export_Tapped"  >
 					<StackPanel Orientation="Horizontal">
 						<TextBlock Text="&#xE74E;" FontFamily="Segoe MDL2 Assets" Margin="0,2,0,0" />
 						<TextBlock Margin="8,0,0,0" >Export To CSV</TextBlock>
 					</StackPanel>
 				</Button>
+                <Button Margin="5,0,0,0" x:Name="bulkExport" Tapped="Export_Tapped"  >
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE74E;" FontFamily="Segoe MDL2 Assets" Margin="0,2,0,0" />
+                        <TextBlock Margin="8,0,0,0" >Bulk Export To CSV</TextBlock>
+                    </StackPanel>
+                </Button>
             </StackPanel>
         </Grid>
         
