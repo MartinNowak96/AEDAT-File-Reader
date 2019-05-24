@@ -50,7 +50,7 @@
 
         <Grid Background="#2f2f2f">
             <StackPanel Orientation="Horizontal">
-				<Button x:Name="selectFile" Tapped="selectFile_Tapped" >
+				<Button x:Name="selectFile" Tapped="SelectFile_Tapped" >
 					<StackPanel Orientation="Horizontal">
 						<TextBlock Text="&#xE8E5;" FontFamily="Segoe MDL2 Assets" Margin="0,2,0,0" />
 					<TextBlock Margin="8,0,0,0" >Select A File</TextBlock>
@@ -91,7 +91,7 @@
 								</Grid.ColumnDefinitions>
 								<StackPanel>
 									<ToggleSwitch x:Name="onOffCol" Header="Column Boolean or Integer"  OnContent="Integer" OffContent="Boolean" />
-                                    <ToggleSwitch x:Name="coordCol" Header="Include event coords?"  OnContent="Yes" OffContent="No" />
+                                    <ToggleSwitch x:Name="cordCol" Header="Include event coords?"  OnContent="Yes" OffContent="No" />
 									<Button x:Name="exportFromPopUp" Content="Export" HorizontalAlignment="Right" Tapped="ExportFromPopUp_Tapped" />
 								</StackPanel>
 								<!-- Items in popup-->

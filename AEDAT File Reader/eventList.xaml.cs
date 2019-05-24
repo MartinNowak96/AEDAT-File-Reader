@@ -1,16 +1,9 @@
 ﻿using AEDAT_File_Reader.Models;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Windows.Storage;
-using Windows.Storage.AccessCache;
-using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
 
@@ -30,7 +23,7 @@ namespace AEDAT_File_Reader
             this.InitializeComponent();
         }
 
-        private async void selectFile_Tapped(object sender, TappedRoutedEventArgs e)
+        private async void SelectFile_Tapped(object sender, TappedRoutedEventArgs e)
         {
 			var picker = new Windows.Storage.Pickers.FileOpenPicker
 			{
@@ -95,10 +88,18 @@ namespace AEDAT_File_Reader
 			savePicker.SuggestedFileName = "New Document";
 
 			StorageFile file = await savePicker.PickSaveFileAsync();
-			await PrepAndSaveCSV(file);
+			await SaveAsCSV(file, cordCol.IsOn, onOffCol.IsOn);
+
+			ContentDialog exportComplete = new ContentDialog()
+			{
+				Title = "Done",
+				Content = "Single export completed.",
+				CloseButtonText = "Close"
+			};
+			await exportComplete.ShowAsync();
 		}
 
-		private async System.Threading.Tasks.Task PrepAndSaveCSV(StorageFile file)
+		private async System.Threading.Tasks.Task SaveAsCSV(StorageFile file, bool includeCords, bool onOffType)
 		{
 			if (file != null)
 			{
@@ -110,7 +111,35 @@ namespace AEDAT_File_Reader
 					{
 						using (var dataWriter = new Windows.Storage.Streams.DataWriter(outputStream))
 						{
-							await CreateCSV(outputStream, dataWriter);
+							Func<bool, string> formatOnOff;
+							Func<int, int, string> formatCoords;
+
+							// Determine which columns are included in the CSV
+							if (includeCords)
+							{
+								dataWriter.WriteString("On/Off, X, Y, Timestamp\n");
+								formatCoords = (x, y) => x.ToString() + "," + y.ToString() + ",";
+							}
+							else
+							{
+								dataWriter.WriteString("On/Off, Timestamp\n");
+								formatCoords = (x, y) => "";
+							}
+
+							// Determine if events are represented by booleans or integers
+							if (onOffType)
+								formatOnOff = b => b.ToString() + ",";
+							else
+								formatOnOff = b => b == true ? "1" : "-1" + ",";
+
+							// Write to the CSV file
+							foreach (Event item in dataGrid.ItemsSource) // TODO: decouple GetEvents and GUI stuff. Then move SaveAsCSV to AedatUtilities
+							{
+								dataWriter.WriteString(formatOnOff(item.onOff) + formatCoords(item.x, item.y) + item.time + "\n");
+							}
+
+							await dataWriter.StoreAsync();
+							await outputStream.FlushAsync();
 						}
 					}
 					stream.Dispose();
@@ -119,7 +148,6 @@ namespace AEDAT_File_Reader
 			}
 		}
 
-		// TODO: fix crash when csv file alredy exists
 		private async System.Threading.Tasks.Task BulkExport()
 		{
 			// Select CSV save directory
@@ -146,14 +174,25 @@ namespace AEDAT_File_Reader
 				if (!fileName.EndsWith(".aedat"))
 					continue;
 
-				// TODO: decouple GetEvents and GUI stuff
-				dataGrid.ItemsSource = await AedatUtilities.GetEvents(file);
-
 				string saveName = Path.ChangeExtension(fileName, ".csv");
-				StorageFile newCSV = await saveFolder.CreateFileAsync(saveName);
+				StorageFile newCSV;
 
-				await PrepAndSaveCSV(newCSV);
+				try
+				{
+					newCSV = await saveFolder.CreateFileAsync(saveName);
+				}
+				catch
+				{
+					// CSV already exists for this file in the save directory. Delete and make a new one
+					StorageFile toDelete = await saveFolder.GetFileAsync(saveName);
+					await toDelete.DeleteAsync();
+					newCSV = await saveFolder.CreateFileAsync(saveName);
+				}
 
+				// TODO: decouple GetEvents and GUI stuff. Then move SaveAsCSV to AedatUtilities
+				dataGrid.ItemsSource = await AedatUtilities.GetEvents(file);
+				// Create CSV
+				await SaveAsCSV(newCSV, cordCol.IsOn, onOffCol.IsOn);
 			}
 
 			ContentDialog exportComplete = new ContentDialog()
@@ -164,39 +203,6 @@ namespace AEDAT_File_Reader
 			};
 			await exportComplete.ShowAsync();
 
-		}
-
-		private async System.Threading.Tasks.Task CreateCSV(Windows.Storage.Streams.IOutputStream outputStream, Windows.Storage.Streams.DataWriter dataWriter)
-		{
-			Func<bool, string> formatOnOff;
-			Func<int, int, string> formatCoords;
-
-			// Determine which columns are included in the CSV
-			if (coordCol.IsOn)
-			{
-				dataWriter.WriteString("On/Off, X, Y, Timestamp\n");
-				formatCoords = (x, y) => x.ToString() + "," + y.ToString() + ",";
-			}
-			else
-			{
-				dataWriter.WriteString("On/Off, Timestamp\n");
-				formatCoords = (x, y) => "";
-			}
-
-			// Determine if events are represented by booleans or integers
-			if (onOffCol.IsOn)
-			formatOnOff = b => b.ToString() + ",";
-			else
-			formatOnOff = b => b == true ? "1" : "-1" + ",";
-			
-			// Write to the CSV file
-			foreach (Event item in dataGrid.ItemsSource)
-			{
-				dataWriter.WriteString(formatOnOff(item.onOff) + formatCoords(item.x, item.y) + item.time + "\n");
-			}
-
-			await dataWriter.StoreAsync();
-			await outputStream.FlushAsync();
 		}
 
 	}
