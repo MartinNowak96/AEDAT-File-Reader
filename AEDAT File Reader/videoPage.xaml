@@ -11,7 +11,7 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
 	<Page.Resources>
-		<DataTemplate x:Key="colorCombo" x:DataType="local:Colors">
+		<DataTemplate x:Key="colorCombo" x:DataType="local:EventColor">
 			<StackPanel Orientation="Vertical" >
 				<TextBlock Text="{x:Bind Name}"/>
 				
