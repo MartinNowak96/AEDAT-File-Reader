@@ -39,6 +39,8 @@ namespace AEDAT_File_Reader
 
 		// # HardwareInterface:
 		public static readonly byte[] hardwareInterfaceCheck = new byte[20] { 0x23, 0x20, 0x48, 0x61, 0x72, 0x64, 0x77, 0x61, 0x72, 0x65, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x3a };
+		// #End Of ASCII
+		public static readonly byte[] endOfHeaderCheck = new byte[23] { 0x0a, 0x23, 0x45, 0x6e, 0x64, 0x20, 0x4f, 0x66, 0x20, 0x41, 0x53, 0x43, 0x49, 0x49, 0x20, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x0d, 0x0a };
 
 
 		/// <summary>
@@ -49,11 +51,7 @@ namespace AEDAT_File_Reader
 		public static int GetEndOfHeaderIndex(ref byte[] fileBytes)
 		{
 			bool foundEndOfHeader = false;
-			const int headerCheckSize = 23;         // Number of elements in the header check
-			byte[] currentHeaderBytes = new byte[headerCheckSize];
-
-			//Compare current bytes being red to find end of header. (#End Of ASCII)
-			byte[] endOfHeaderCheck = new byte[headerCheckSize] { 0x0a, 0x23, 0x45, 0x6e, 0x64, 0x20, 0x4f, 0x66, 0x20, 0x41, 0x53, 0x43, 0x49, 0x49, 0x20, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x0d, 0x0a };
+			byte[] currentHeaderBytes = new byte[endOfHeaderCheck.Length];
 
 			Queue<byte> headerCheckQ = new Queue<byte>();
 
@@ -65,7 +63,7 @@ namespace AEDAT_File_Reader
 					headerCheckQ.Enqueue(byteIn);
 
 					// Remove oldest element in the queue if it becomes too large. FIFO
-					if (headerCheckQ.Count > headerCheckSize) headerCheckQ.Dequeue();
+					if (headerCheckQ.Count > endOfHeaderCheck.Length) headerCheckQ.Dequeue();
 
 					headerCheckQ.CopyTo(currentHeaderBytes, 0);
 					if (Enumerable.SequenceEqual(endOfHeaderCheck, currentHeaderBytes))
@@ -238,8 +236,10 @@ namespace AEDAT_File_Reader
 
 			byte[] currentDataEntry = new byte[dataEntrySize];
 
+			// Determine camera type
 			string cameraTypeSearch = FindLineInHeader(hardwareInterfaceCheck, ref result);
 			CameraParameters cam = ParseCameraModel(cameraTypeSearch);
+
 			if (cam is null)
 			{
 				ContentDialog invalidData = new ContentDialog()
@@ -290,6 +290,17 @@ namespace AEDAT_File_Reader
 			}
 
 			return result;
+		}
+
+		public static async Task<byte[]> ReadHeaderToBytes(StorageFile file)
+		{
+			byte[] header = new byte[524288]; // Header is usually ~300KB. Read first 0.5MB to be safe.
+			Stream fs = (await file.OpenReadAsync()).AsStreamForRead();
+			using (BinaryReader reader = new BinaryReader(fs))
+			{
+				reader.Read(header, 0, 524288);
+			}
+			return header;
 		}
 
 		public static Func<byte[], int, int, int[]> GetXY_Cam(string cameraName)
