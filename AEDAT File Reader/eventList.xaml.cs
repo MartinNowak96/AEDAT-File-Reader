@@ -209,10 +209,10 @@ namespace AEDAT_File_Reader
                         }
 
                         // Determine if events are represented by booleans or integers
-                        if (onOffType)
+                        if (!onOffType)
                             formatOnOff = b => b.ToString() + ",";
                         else
-                            formatOnOff = b => b == true ? "1" : "-1" + ",";
+                            formatOnOff = b => b == true ? "1," : "-1,";
 
                         // Write to the CSV file
                         foreach (Event item in dataGrid.ItemsSource) // TODO: decouple GetEvents and GUI stuff. Then move SaveAsCSV to AedatUtilities
