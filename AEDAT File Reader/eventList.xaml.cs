@@ -193,7 +193,7 @@ namespace AEDAT_File_Reader
 							if (pixelNumber)
 							{
 								dataWriter.WriteString("On/Off,PixelNumber,Timestamp\n");
-								formatCoords = (x, y) => ((y * currentCamera.cameraY) + x).ToString() + ","; 
+								formatCoords = (x, y) => ((currentCamera.cameraX * (y - 1)) + (x - 1)).ToString() + ","; 
 							}
 							else
 							{
