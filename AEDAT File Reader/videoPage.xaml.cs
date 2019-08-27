@@ -120,9 +120,6 @@ namespace AEDAT_File_Reader
 				return;
 			}
 
-			// Load appropriate GetCoordinates function based upon camera type
-			Func<byte[], int, int, int[]> getXY = AedatUtilities.GetXY_Cam(cam.cameraName);
-
 			// Initilize writeable bitmap
 			WriteableBitmap bitmap = new WriteableBitmap(cam.cameraX, cam.cameraY);
 			InMemoryRandomAccessStream inMemoryRandomAccessStream = new InMemoryRandomAccessStream();

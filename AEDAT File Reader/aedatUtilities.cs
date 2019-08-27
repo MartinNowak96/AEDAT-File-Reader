@@ -152,14 +152,7 @@ namespace AEDAT_File_Reader
 			return Encoding.UTF8.GetString(searchReturn.ToArray());
 		}
 
-		public static CameraParameters ParseCameraModel(string s)
-		{
-			switch (s)
-			{
-				case string dvs128 when dvs128.Contains("DVS128"): return new CameraParameters(128, 128, "DVS128");
-				case string dvs240 when dvs240.Contains("DAVIS240"): return new CameraParameters(240, 180, "DAVIS240");
-				default: return null;
-			}
+		
 
         public static CameraParameters ParseCameraModel(string s)
         {
@@ -333,24 +326,6 @@ namespace AEDAT_File_Reader
 				reader.Read(header, 0, 524288);
 			}
 			return header;
-		}
-
-		public static Func<byte[], int, int, int[]> GetXY_Cam(string cameraName)
-		{
-			Func<byte[], int, int, int[]> getXY;
-			switch (cameraName)
-			{
-				case "DVS128":
-					getXY = GetXYCords128;
-					break;
-				case "DAVIS240":
-					getXY = GetXYCords240;
-					break;
-				default:
-					getXY = GetXYCords240;
-					break;
-			}
-			return getXY;
 		}
 
 		public static void SetPixel(ref byte[] pixels, int x, int y, byte[] rgba, int imageWidth)
