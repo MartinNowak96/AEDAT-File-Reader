@@ -148,15 +148,15 @@ namespace AEDAT_File_Reader
 				Array.Reverse(currentDataEntry);
 				timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes, uS
 
-				int[] XY = getXY(currentDataEntry, cam.cameraY, cam.cameraX);
-				if (AedatUtilities.GetEventType(currentDataEntry))
-				{
-					AedatUtilities.SetPixel(ref currentFrame, XY[0], XY[1], onColor.Color, cam.cameraX); // ON event
-				}
-				else
-				{
-					AedatUtilities.SetPixel(ref currentFrame, XY[0], XY[1], offColor.Color, cam.cameraX); // OFF event
-				}
+					int[] XY = cam.getXY(currentDataEntry, cam.cameraY, cam.cameraX);
+					if (cam.getEventType(currentDataEntry)) 
+					{
+						AedatUtilities.SetPixel(ref currentFrame, XY[0], XY[1], onColor.Color, cam.cameraX); // ON event
+					}
+					else
+					{
+						AedatUtilities.SetPixel(ref currentFrame, XY[0], XY[1], offColor.Color, cam.cameraX); // OFF event
+					}
 
 				if (lastTime == -999999)
 				{

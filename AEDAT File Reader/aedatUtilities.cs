@@ -11,18 +11,23 @@ using Windows.UI.Xaml.Controls;
 
 namespace AEDAT_File_Reader
 {
-	public class CameraParameters
-	{
-		public readonly string cameraName;
-		public readonly ushort cameraX;
-		public readonly ushort cameraY;
+    public class CameraParameters
+    {
+        public readonly string cameraName;
+        public readonly ushort cameraX;
+        public readonly ushort cameraY;
+		public Func<byte[], int, int, int[]> getXY;
+		public Func<byte[], bool> getEventType;
 
-		public CameraParameters(ushort cameraX, ushort cameraY, string cameraName)
-		{
-			this.cameraX = cameraX;
-			this.cameraY = cameraY;
-			this.cameraName = cameraName;
-		}
+
+		public CameraParameters(ushort cameraX, ushort cameraY, string cameraName, Func<byte[], int, int, int[]> getXY, Func<byte[], bool> getEventType)
+        {
+			this.getXY = getXY;
+			this.getEventType = getEventType;
+            this.cameraX = cameraX;
+            this.cameraY = cameraY;
+            this.cameraName = cameraName;
+        }
 
 		public CameraParameters(ushort cameraX, ushort cameraY)
 		{
@@ -156,6 +161,14 @@ namespace AEDAT_File_Reader
 				default: return null;
 			}
 
+        public static CameraParameters ParseCameraModel(string s)
+        {
+            switch (s)
+            {
+                case string dvs128 when dvs128.Contains("DVS128"): return new CameraParameters(128, 128, "DVS128", GetXYCords128, GetEventType128);
+                case string dvs240 when dvs240.Contains("DAVIS240"): return new CameraParameters(240, 180, "DAVIS240", GetXYCords240, GetEventType240);
+                default: return null;
+            }
 
 		}
 
@@ -170,6 +183,26 @@ namespace AEDAT_File_Reader
 			return ((dataEntry[5] >> 3) & 1) == 1;     //Event type is located in the fourth bit of the sixth byte
 		}
 
+        /// <summary>
+        /// Extracts the event type from a data entry byte array for 240.
+        /// </summary>
+        /// <param name="dataEntry"></param>
+        /// <returns>Returns true for an ON event, false for an OFF event.</returns>
+        public static bool GetEventType240(byte[] dataEntry)
+        {
+            return ((dataEntry[5] >> 3) & 1) == 1;     //Event type is located in the fourth bit of the sixth byte
+        }
+
+		/// <summary>
+		/// Extracts the event type from a data entry byte array for 128.
+		/// </summary>
+		/// <param name="dataEntry"></param>
+		/// <returns>Returns true for an ON event, false for an OFF event.</returns>
+		public static bool GetEventType128(byte[] dataEntry)
+		{
+			return ((dataEntry[4]) & 1) == 1;     //Event type is located in the fourth bit of the sixth byte
+		}
+
 
 		// TODO: Combine both GetXYCords functions into one (lambda?)
 		/// <summary>
@@ -178,9 +211,9 @@ namespace AEDAT_File_Reader
 		/// <param name="dataEntry"></param>
 		/// <returns>Returns a uint16 array containing the XY coordinates.</returns>
 		public static int[] GetXYCords240(byte[] dataEntry, int height, int width)
-		{
-			int[] xy = new int[2];
-			BitArray bits = new BitArray(dataEntry);
+        {
+            int[] xy = new int[2];
+            BitArray bits = new BitArray(dataEntry);
 
 			// X
 			bool[] cord = new bool[] { bits[44], bits[45], bits[46], bits[47], bits[48], bits[49], bits[50], bits[51], bits[52], bits[53] };
@@ -255,23 +288,22 @@ namespace AEDAT_File_Reader
 
 			int endOfHeaderIndex = GetEndOfHeaderIndex(ref result);
 
-			int timeStamp;
-
-			Func<byte[], int, int, int[]> getXY = GetXY_Cam(cam.cameraName);
-
+            int timeStamp;
 			for (int i = endOfHeaderIndex; i < result.Count() - 1; i += 8)
-			{
-				for (int j = 7; j > -1; j--)
-				{
-					currentDataEntry[j] = result[i + j];
+            {
+                for (int j = 7; j > -1; j--)
+                {
+                    currentDataEntry[j] = result[i + j];
 
 				}
 				Array.Reverse(currentDataEntry);
 				timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes
 
-				int[] XY = getXY(currentDataEntry, cam.cameraY, cam.cameraX);
-				tableData.Add(new Event { time = timeStamp, onOff = GetEventType(currentDataEntry), x = XY[0], y = XY[1] });
-			}
+                int[] XY = cam.getXY(currentDataEntry, cam.cameraY, cam.cameraX);
+
+				
+				tableData.Add(new Event { time = timeStamp, onOff = cam.getEventType(currentDataEntry), x = XY[0], y = XY[1] });
+            }
 
 			return tableData;
 
