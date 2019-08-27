@@ -34,8 +34,8 @@
         
     </Page.Resources>
 
-  
-        <NavigationView IsBackButtonVisible="Collapsed" Grid.Row="1" IsPaneOpen="False" AlwaysShowHeader="False" CompactPaneLength="48" OpenPaneLength="225" x:Name="nav" ItemInvoked="nav_ItemInvoked">
+
+	<NavigationView  IsBackButtonVisible="Collapsed" Grid.Row="1" IsPaneOpen="False" AlwaysShowHeader="False" CompactPaneLength="48" OpenPaneLength="225" x:Name="nav" ItemInvoked="nav_ItemInvoked">
             <NavigationView.MenuItems>
 			<NavigationViewItem Content="Summary" x:Name="summary" >
 				<NavigationViewItem.Icon>

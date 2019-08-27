@@ -131,7 +131,7 @@ namespace AEDAT_File_Reader
 			int newlineAttempts = 0;
 			while (true)
 			{
-				if (fileBytes[endOfLineIndex] != newLine[0] && fileBytes[endOfLineIndex + 1] != newLine[1]) // hh
+				if (fileBytes[endOfLineIndex] != newLine[0] && fileBytes[endOfLineIndex + 1] != newLine[1]) 
 				{
 					endOfLineIndex++;
 					newlineAttempts++;
@@ -197,7 +197,6 @@ namespace AEDAT_File_Reader
 		}
 
 
-		// TODO: Combine both GetXYCords functions into one (lambda?)
 		/// <summary>
 		/// Gets the XY coordinates from the provided data entry.
 		/// </summary>
@@ -328,6 +327,14 @@ namespace AEDAT_File_Reader
 			return header;
 		}
 
+		/// <summary>
+		/// Sets the pixel from color/coords in the pixel array(passed by reference).
+		/// </summary>
+		/// <param name="pixels">Pixel array to be modified</param>
+		/// <param name="x"></param>
+		/// <param name="y"></param>
+		/// <param name="rgba">The color the pixel is set to.[r,g,b,a]</param>
+		/// <param name="imageWidth"></param>
 		public static void SetPixel(ref byte[] pixels, int x, int y, byte[] rgba, int imageWidth)
 		{
 

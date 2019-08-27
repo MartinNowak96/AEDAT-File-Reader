@@ -55,8 +55,11 @@
 				</StackPanel>
 				<ComboBox x:Name="onColorCombo" ItemsSource="{x:Bind colors}" ItemTemplate="{StaticResource colorCombo}" Header="On Event Colors"   ></ComboBox>
 				<ComboBox x:Name="offColorCombo" ItemsSource="{x:Bind colors}" ItemTemplate="{StaticResource colorCombo}" Header="Off Event Colors" ></ComboBox>
+				<ComboBox x:Name="framerateCombo"  Header="Playback Framerate" SelectedIndex="0"  >
+					<ComboBoxItem>30 FPS</ComboBoxItem>
+					<ComboBoxItem>60 FPS</ComboBoxItem>
+				</ComboBox>
 
-				
 
 			</StackPanel>
 			

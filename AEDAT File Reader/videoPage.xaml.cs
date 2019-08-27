@@ -82,12 +82,13 @@ namespace AEDAT_File_Reader
 			EventColor offColor;
 			int frameTime;
 			int maxFrames;
+			float fps;
 
 			try
 			{
 				// Grab video reconstruction settings from GUI
 				// Will throw a FormatException if input is invalid (negative numbers or input has letters)
-				(frameTime, maxFrames, onColor, offColor) = ParseVideoSettings();
+				(frameTime, maxFrames, onColor, offColor, fps) = ParseVideoSettings();
 			}
 			catch (FormatException)
 			{
@@ -121,39 +122,35 @@ namespace AEDAT_File_Reader
 			}
 
 			// Initilize writeable bitmap
-			WriteableBitmap bitmap = new WriteableBitmap(cam.cameraX, cam.cameraY);
+			WriteableBitmap bitmap = new WriteableBitmap(cam.cameraX, cam.cameraY);	// init image with camera size
 			InMemoryRandomAccessStream inMemoryRandomAccessStream = new InMemoryRandomAccessStream();
 			BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, inMemoryRandomAccessStream);
 			Stream pixelStream = bitmap.PixelBuffer.AsStream();
 			byte[] currentFrame = new byte[pixelStream.Length];
 
 			byte[] currentDataEntry = new byte[AedatUtilities.dataEntrySize];
-			int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref aedatFile);
+			int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref aedatFile);	// find end of aedat header
 			int lastTime = -999999;
-			float playback_frametime = 1.0f / 30.0f;
+			float playback_frametime = 1.0f / fps;
 
 			int timeStamp;
 			int frameCount = 0;
 
+			
 			// Read through AEDAT file
-			for (int i = endOfHeaderIndex; i < (aedatFile.Length); i += AedatUtilities.dataEntrySize)
+			for (int i = endOfHeaderIndex,length = aedatFile.Length; i < length; i += AedatUtilities.dataEntrySize)	// iterate through file, 8 bytes at a time.
 			{
-				for (int j = 7; j > -1; j--)
+				for (int j = 7; j > -1; j--)	// from i get the next 8 bytes
 				{
 					currentDataEntry[j] = aedatFile[i + j];
 				}
 				Array.Reverse(currentDataEntry);
 				timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes, uS
 
-					int[] XY = cam.getXY(currentDataEntry, cam.cameraY, cam.cameraX);
-					if (cam.getEventType(currentDataEntry)) 
-					{
-						AedatUtilities.SetPixel(ref currentFrame, XY[0], XY[1], onColor.Color, cam.cameraX); // ON event
-					}
-					else
-					{
-						AedatUtilities.SetPixel(ref currentFrame, XY[0], XY[1], offColor.Color, cam.cameraX); // OFF event
-					}
+				int[] XY = cam.getXY(currentDataEntry, cam.cameraY, cam.cameraX);
+				
+				AedatUtilities.SetPixel(ref currentFrame, XY[0], XY[1],(cam.getEventType(currentDataEntry)? onColor.Color:offColor.Color), cam.cameraX);
+					
 
 				if (lastTime == -999999)
 				{
@@ -222,16 +219,20 @@ namespace AEDAT_File_Reader
 			await videoExportCompleteDialog.ShowAsync();
 		}
 
-		private (int, int, EventColor, EventColor) ParseVideoSettings()
+		private (int, int, EventColor, EventColor, float) ParseVideoSettings()
 		{
 			int frameTime = 33333;  // The amount of time per frame in uS (30 fps = 33333)
 			int maxFrames;          // Max number of frames in the reconstructed video
-
+			float fps = framerateCombo.SelectedIndex == 1 ? 60.0f : 30.0f; ;
 			if (realTimeCheckbox.IsChecked == true)
 			{
 				frameTime = 33333;
+				if(framerateCombo.SelectedIndex == 1)
+				{
+					frameTime = 33333 / 2;
+				}
 			}
-			if (realTimeCheckbox.IsChecked == false)
+			else
 			{
 				frameTime = Int32.Parse(frameTimeTB.Text);
 			}
@@ -255,7 +256,7 @@ namespace AEDAT_File_Reader
 			EventColor onColor = onColorCombo.SelectedItem as EventColor;
 			EventColor offColor = offColorCombo.SelectedItem as EventColor;
 
-			return (frameTime, maxFrames, onColor, offColor);
+			return (frameTime, maxFrames, onColor, offColor, fps);
 		}
 
 		private void AllFrameCheckBox_Checked(object sender, Windows.UI.Xaml.RoutedEventArgs e)

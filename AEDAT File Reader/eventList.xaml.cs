@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
@@ -41,15 +42,15 @@ namespace AEDAT_File_Reader
 			this.InitializeComponent();
 		}
 
-		private async System.Threading.Tasks.Task UpdateDataGrid(StorageFile file)
+		private async Task<List<Event>> UpdateDataGrid(StorageFile file)
 		{
-			// TODO: decouple GetEvents and GUI stuff. Then move SaveAsCSV to AedatUtilities
-			dataGrid.ItemsSource = await AedatUtilities.GetEvents(file);
+			List<Event> temp = await AedatUtilities.GetEvents(file);
 
 			// Get camera type
 			byte[] headerBytes = await AedatUtilities.ReadHeaderToBytes(file);
 			string cameraTypeSearch = AedatUtilities.FindLineInHeader(AedatUtilities.hardwareInterfaceCheck, ref headerBytes);
 			currentCamera = AedatUtilities.ParseCameraModel(cameraTypeSearch);
+			return temp;
 		}
 
 		private async void SelectFile_Tapped(object sender, TappedRoutedEventArgs e)
@@ -66,7 +67,8 @@ namespace AEDAT_File_Reader
 
 			if (file != null)
 			{
-				await UpdateDataGrid(file);
+				List<Event> events =await UpdateDataGrid(file);
+				dataGrid.ItemsSource = events;
 			}
 		}
 
@@ -101,7 +103,7 @@ namespace AEDAT_File_Reader
 
 		}
 
-		private async System.Threading.Tasks.Task SingleExport()
+		private async Task SingleExport()
 		{
 			var savePicker = new Windows.Storage.Pickers.FileSavePicker
 			{
@@ -115,12 +117,13 @@ namespace AEDAT_File_Reader
 			savePicker.SuggestedFileName = "New Document";
 
 			StorageFile newCSV = await savePicker.PickSaveFileAsync();
-			await SaveAsCSV(newCSV, cordCol.IsOn, onOffCol.IsOn, pixelNumber.IsOn);
+			List<Event> tempEvents = (List<Event>)dataGrid.ItemsSource;
+			await SaveAsCSV(tempEvents,newCSV, cordCol.IsOn, onOffCol.IsOn, pixelNumber.IsOn);
 
 			await singleExportComplete.ShowAsync();
 		}
 
-		private async System.Threading.Tasks.Task BulkExport()
+		private async Task BulkExport()
 		{
 			// Select CSV save directory
 			var saveFolderPicker = new Windows.Storage.Pickers.FolderPicker();
@@ -161,18 +164,16 @@ namespace AEDAT_File_Reader
 					newCSV = await saveFolder.CreateFileAsync(saveName);
 				}
 
-				// TODO: decouple GetEvents and GUI stuff. Then move SaveAsCSV to AedatUtilities
-				await UpdateDataGrid(file);
-
+				List<Event> tempEvents = await UpdateDataGrid(file);
 				// Create CSV
-				await SaveAsCSV(newCSV, cordCol.IsOn, onOffCol.IsOn, pixelNumber.IsOn);
+				await SaveAsCSV(tempEvents, newCSV, cordCol.IsOn, onOffCol.IsOn, pixelNumber.IsOn);
 			}
 
 			await bulkExportComplete.ShowAsync();
 
 		}
 
-		private async System.Threading.Tasks.Task SaveAsCSV(StorageFile saveFile, bool includeCords, bool onOffType, bool pixelNumber)
+		private async Task SaveAsCSV(List<Event> data,StorageFile saveFile, bool includeCords, bool onOffType, bool pixelNumber)
         {
             if (saveFile == null) return;
 
@@ -215,7 +216,7 @@ namespace AEDAT_File_Reader
                             formatOnOff = b => b == true ? "1," : "-1,";
 
                         // Write to the CSV file
-                        foreach (Event item in dataGrid.ItemsSource) // TODO: decouple GetEvents and GUI stuff. Then move SaveAsCSV to AedatUtilities
+                        foreach (Event item in data)
                         {
                             dataWriter.WriteString(formatOnOff(item.onOff) + formatCoords(item.x, item.y) + item.time + "\n");
                         }
