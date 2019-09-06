@@ -2,14 +2,19 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
+using Windows.Foundation;
 using Windows.Graphics.Imaging;
 using Windows.Media.Editing;
 using Windows.Media.MediaProperties;
+using Windows.Media.Transcoding;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.Storage.Streams;
+using Windows.UI.Core;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media.Imaging;
@@ -76,6 +81,7 @@ namespace AEDAT_File_Reader
 		string previousValueMaxFrame = "100";
 		string previousValueTimePerFrame = "1000";
 
+
 		private async void SelectFile_Tapped(object sender, TappedRoutedEventArgs e)
 		{
 			EventColor onColor;
@@ -104,7 +110,6 @@ namespace AEDAT_File_Reader
 			};
 			picker.FileTypeFilter.Add(".AEDAT");
 
-			MediaComposition composition = new MediaComposition();
 
 			// Select AEDAT file to be converted
 			StorageFile file = await picker.PickSingleFileAsync();
@@ -121,36 +126,54 @@ namespace AEDAT_File_Reader
 				return;
 			}
 
-			// Initilize writeable bitmap
-			WriteableBitmap bitmap = new WriteableBitmap(cam.cameraX, cam.cameraY);	// init image with camera size
-			InMemoryRandomAccessStream inMemoryRandomAccessStream = new InMemoryRandomAccessStream();
-			BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, inMemoryRandomAccessStream);
-			Stream pixelStream = bitmap.PixelBuffer.AsStream();
-			byte[] currentFrame = new byte[pixelStream.Length];
-
-			byte[] currentDataEntry = new byte[AedatUtilities.dataEntrySize];
-			int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref aedatFile);	// find end of aedat header
-			int lastTime = -999999;
 			float playback_frametime = 1.0f / fps;
+			MediaComposition composition;
+			if (playbackType.IsOn)
+			{
+				composition = await TimeBasedReconstruction(aedatFile, cam, onColor, offColor, frameTime, maxFrames, playback_frametime);
+			}
+			else
+			{
+				int numOfEvents = Int32.Parse(numOfEventInput.Text);
+				composition = await EventBasedReconstruction(aedatFile, cam, onColor, offColor, numOfEvents, maxFrames, playback_frametime);
+			}
+			SaveCompositionToFile(composition, file.DisplayName, cam.cameraX, cam.cameraY);
+		}
 
+		private static Stream InitBitMap(CameraParameters cam)
+		{
+			// Initilize writeable bitmap
+			WriteableBitmap bitmap = new WriteableBitmap(cam.cameraX, cam.cameraY); // init image with camera size
+			InMemoryRandomAccessStream inMemoryRandomAccessStream = new InMemoryRandomAccessStream();
+			Stream pixelStream = bitmap.PixelBuffer.AsStream();
+			return pixelStream;
+		}
+
+		public async Task<MediaComposition> TimeBasedReconstruction(byte[] aedatFile, CameraParameters cam, EventColor onColor, EventColor offColor, int frameTime, int maxFrames, float playback_frametime)
+		{
+			showLoading.IsActive = true;
+			backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Visible;
+			MediaComposition composition = new MediaComposition();
+			int lastTime = -999999;
 			int timeStamp;
 			int frameCount = 0;
+			Stream pixelStream = InitBitMap(cam);
+			byte[] currentFrame = new byte[pixelStream.Length];
+			int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref aedatFile);   // find end of aedat header
+			byte[] currentDataEntry = new byte[AedatUtilities.dataEntrySize];
 
-			
 			// Read through AEDAT file
-			for (int i = endOfHeaderIndex,length = aedatFile.Length; i < length; i += AedatUtilities.dataEntrySize)	// iterate through file, 8 bytes at a time.
+			for (int i = endOfHeaderIndex, length = aedatFile.Length; i < length; i += AedatUtilities.dataEntrySize)    // iterate through file, 8 bytes at a time.
 			{
-				for (int j = 7; j > -1; j--)	// from i get the next 8 bytes
+				for (int j = 0; j < 8; j++)    // from i get the next 8 bytes
 				{
-					currentDataEntry[j] = aedatFile[i + j];
+					currentDataEntry[j] = aedatFile[i + (7-j)];
 				}
-				Array.Reverse(currentDataEntry);
 				timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes, uS
 
 				int[] XY = cam.getXY(currentDataEntry, cam.cameraY, cam.cameraX);
-				
-				AedatUtilities.SetPixel(ref currentFrame, XY[0], XY[1],(cam.getEventType(currentDataEntry)? onColor.Color:offColor.Color), cam.cameraX);
-					
+				AedatUtilities.SetPixel(ref currentFrame, XY[0], XY[1], (cam.getEventType(currentDataEntry) ? onColor.Color : offColor.Color), cam.cameraX);
+
 
 				if (lastTime == -999999)
 				{
@@ -187,8 +210,63 @@ namespace AEDAT_File_Reader
 
 			}
 
-			SaveCompositionToFile(composition, file.DisplayName, cam.cameraX, cam.cameraY);
+			return composition;
+
 		}
+
+		public async Task<MediaComposition> EventBasedReconstruction(byte[] aedatFile, CameraParameters cam, EventColor onColor, EventColor offColor, int eventsPerFrame, int maxFrames, float playback_frametime)
+		{
+			MediaComposition composition = new MediaComposition();
+			int frameCount = 0;
+			int eventCount = 0;
+			Stream pixelStream = InitBitMap(cam);
+			byte[] currentFrame = new byte[pixelStream.Length];
+			int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref aedatFile);   // find end of aedat header
+			byte[] currentDataEntry = new byte[AedatUtilities.dataEntrySize];
+
+			// Read through AEDAT file
+			for (int i = endOfHeaderIndex, length = aedatFile.Length; i < length; i += AedatUtilities.dataEntrySize)    // iterate through file, 8 bytes at a time.
+			{
+				for (int j = 0; j < 8; j++)    // from i get the next 8 bytes
+				{
+					currentDataEntry[j] = aedatFile[i + (7 - j)];
+				}
+				int[] XY = cam.getXY(currentDataEntry, cam.cameraY, cam.cameraX);
+				AedatUtilities.SetPixel(ref currentFrame, XY[0], XY[1], (cam.getEventType(currentDataEntry) ? onColor.Color : offColor.Color), cam.cameraX);
+
+				eventCount++;
+				if (eventCount >= eventsPerFrame) // Collected events within specified timeframe, add frame to video
+				{
+					eventCount = 0;
+					WriteableBitmap b = new WriteableBitmap(cam.cameraX, cam.cameraY);
+					using (Stream stream = b.PixelBuffer.AsStream())
+					{
+						await stream.WriteAsync(currentFrame, 0, currentFrame.Length);
+					}
+
+					SoftwareBitmap outputBitmap = SoftwareBitmap.CreateCopyFromBuffer(b.PixelBuffer, BitmapPixelFormat.Bgra8, b.PixelWidth, b.PixelHeight, BitmapAlphaMode.Ignore);
+					CanvasBitmap bitmap2 = CanvasBitmap.CreateFromSoftwareBitmap(CanvasDevice.GetSharedDevice(), outputBitmap);
+
+					// Set playback framerate
+					MediaClip mediaClip = MediaClip.CreateFromSurface(bitmap2, TimeSpan.FromSeconds(playback_frametime));
+					composition.Clips.Add(mediaClip);
+					
+					frameCount++;
+					// Stop adding frames to video if max frames has been reached
+					if (frameCount >= maxFrames)
+					{
+						return composition;
+					}
+					currentFrame = new byte[pixelStream.Length];
+				}
+				
+
+			}
+
+			return composition;
+
+		}
+
 
 		private async void SaveCompositionToFile(MediaComposition composition, string suggestedFileName, uint vidX, uint vidY)
 		{
@@ -203,20 +281,44 @@ namespace AEDAT_File_Reader
 
 			// Get name and location for saved video file
 			StorageFile sampleFile = await savePicker.PickSaveFileAsync();
-			if (sampleFile == null) return;
+			if (sampleFile == null)
+			{
+				backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
+				showLoading.IsActive = false;
+				return;
+			}
 
 			await composition.SaveAsync(sampleFile);
 			composition = await MediaComposition.LoadAsync(sampleFile);
-
+			
 			// Get a generic encoding profile and match the width and height to the camera's width and height
 			MediaEncodingProfile _MediaEncodingProfile = MediaEncodingProfile.CreateMp4(VideoEncodingQuality.HD720p);
 			_MediaEncodingProfile.Video.Width = vidX;
 			_MediaEncodingProfile.Video.Height = vidY;
 
-			await composition.RenderToFileAsync(sampleFile, MediaTrimmingPreference.Precise, _MediaEncodingProfile);
-			mediaSimple.Source = new Uri("ms-appx:///WBVideo.mp4");
 
-			await videoExportCompleteDialog.ShowAsync();
+
+			var saveOperation =  composition.RenderToFileAsync(sampleFile, MediaTrimmingPreference.Precise, _MediaEncodingProfile);
+			//mediaSimple.Source = new Uri("ms-appx:///WBVideo.mp4");
+			saveOperation.Progress = new AsyncOperationProgressHandler<TranscodeFailureReason, double>(async (info, progress) =>
+			{
+				await this.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, new DispatchedHandler(() =>
+				{
+					Debug.WriteLine(progress);
+					//ShowErrorMessage(string.Format("Saving file... Progress: {0:F0}%", progress));
+				}));
+			});
+			saveOperation.Completed = new AsyncOperationWithProgressCompletedHandler<TranscodeFailureReason, double>(async (info, status) =>
+			{
+				await this.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, new DispatchedHandler(async () =>
+				{
+					backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
+					showLoading.IsActive = false;
+					await videoExportCompleteDialog.ShowAsync();
+
+				}));
+			});
+			
 		}
 
 		private (int, int, EventColor, EventColor, float) ParseVideoSettings()
@@ -293,6 +395,30 @@ namespace AEDAT_File_Reader
 			frameTimeTB.Text = this.previousValueTimePerFrame;
 			frameTimeTB.IsReadOnly = false;
 			frameTimeTB.IsEnabled = true;
+		}
+
+		private void PlaybackType_Toggled(object sender, Windows.UI.Xaml.RoutedEventArgs e)
+		{
+			try
+			{
+				if (playbackType.IsOn)
+				{
+					numOfEventInput.IsEnabled = false;
+					realTimeCheckbox.IsEnabled = true;
+					frameTimeTB.IsEnabled = true;
+				}
+				else
+				{
+					numOfEventInput.IsEnabled = true;
+					realTimeCheckbox.IsEnabled = false;
+					frameTimeTB.IsEnabled = false;
+				}
+			}
+			catch
+			{
+
+			}
+			
 		}
 	}
 }

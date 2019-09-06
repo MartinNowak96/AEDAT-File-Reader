@@ -283,17 +283,13 @@ namespace AEDAT_File_Reader
             int timeStamp;
 			for (int i = endOfHeaderIndex; i < result.Count() - 1; i += 8)
             {
-                for (int j = 7; j > -1; j--)
+                for (int j = 0; j < 8; j++)
                 {
-                    currentDataEntry[j] = result[i + j];
-
+                    currentDataEntry[j] = result[i + (7 - j)];
 				}
-				Array.Reverse(currentDataEntry);
 				timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes
 
                 int[] XY = cam.getXY(currentDataEntry, cam.cameraY, cam.cameraX);
-
-				
 				tableData.Add(new Event { time = timeStamp, onOff = cam.getEventType(currentDataEntry), x = XY[0], y = XY[1] });
             }
 

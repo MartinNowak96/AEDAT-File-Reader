@@ -18,52 +18,100 @@
 			</StackPanel>
 		</DataTemplate>
 	</Page.Resources>
-		
-    <Grid>
-		<Grid.RowDefinitions>
-			<RowDefinition Height="Auto" />
-			<RowDefinition Height="*"/>
-		</Grid.RowDefinitions>
 
-		<Grid Background="#2f2f2f"   >
-			<StackPanel Orientation="Horizontal">
-				<Button x:Name="SelectFile" Tapped="SelectFile_Tapped" >
-					<StackPanel Orientation="Horizontal">
-						<TextBlock Text="&#xE8E5;" FontFamily="Segoe MDL2 Assets" Margin="0,2,0,0" />
-						<TextBlock Margin="8,0,0,0" >Select A File</TextBlock>
-					</StackPanel>
-				</Button>
-			</StackPanel>
-		</Grid>
 
-		<Grid Grid.Row="1" Padding="8" >
-			<StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <TextBox x:Name="frameTimeTB" InputScope="Number" Header="Time per frame (uS):" 
-					 Height="60" Width="200" HorizontalAlignment="Left" VerticalAlignment="Top" Text="1000"/>
-                    <CheckBox   Margin="10,23,0,0" x:Name="realTimeCheckbox" Content="Real Time Playback" Checked="RealTimeCheckbox_Checked" Unchecked="RealTimeCheckbox_Unchecked"  ></CheckBox>
-                </StackPanel>
-				
-				<StackPanel Orientation="Horizontal" >
-					<TextBox x:Name="maxFramesTB" InputScope="Number" Header="Maximum number of frames:" 
-					 Height="60" Width="200" HorizontalAlignment="Left" VerticalAlignment="Top"  Text="100" />
-		
-                    <CheckBox  x:Name="allFrameCheckBox" Margin="10,23,0,0" Checked="AllFrameCheckBox_Checked" Content="All Frames" Unchecked="AllFrameCheckBox_Unchecked"   ></CheckBox>
-					
-				
-					
+	<Grid>
+		<VisualStateManager.VisualStateGroups>
+			<VisualStateGroup x:Name="WindowStates">
+				<VisualState x:Name="WideState">
+					<VisualState.StateTriggers>
+						<AdaptiveTrigger MinWindowWidth="600"  />
+					</VisualState.StateTriggers>
+					<VisualState.Setters>
+						<Setter Target="test123.Orientation" Value="Horizontal" ></Setter>
+						<Setter Target="numOfEventsStack.Margin" Value="20,0,0,0" ></Setter>
+					</VisualState.Setters>
+				</VisualState>
+				<VisualState x:Name="NarrowState">
+					<VisualState.StateTriggers>
+						<AdaptiveTrigger MinWindowWidth="0"  />
+					</VisualState.StateTriggers>
+					<VisualState.Setters>
+						<Setter Target="test123.Orientation" Value="Vertical" ></Setter>
+						<Setter Target="numOfEventsStack.Margin" Value="0,0,0,0" ></Setter>
+					</VisualState.Setters>
+				</VisualState>
+			</VisualStateGroup>
+		</VisualStateManager.VisualStateGroups>
+		<Grid>
+			<Grid.RowDefinitions>
+				<RowDefinition Height="Auto" />
+				<RowDefinition Height="*"/>
+			</Grid.RowDefinitions>
+			<ProgressRing IsActive="False" Grid.ColumnSpan="10"  Grid.RowSpan="10" x:Name="showLoading" Width="150" Height="150" HorizontalAlignment="Center" VerticalAlignment="Center"  Canvas.ZIndex="10000"/>
+			<Rectangle x:Name="backgroundTint" Visibility="Collapsed" Opacity=".5" HorizontalAlignment="Stretch"  VerticalAlignment="Stretch" Fill="Black" Grid.ColumnSpan="10"  Grid.RowSpan="10" Canvas.ZIndex="999" ></Rectangle>
+			<Grid Background="#2f2f2f"   >
+				<StackPanel Orientation="Horizontal">
+					<Button x:Name="SelectFile" Tapped="SelectFile_Tapped" >
+						<StackPanel Orientation="Horizontal">
+							<TextBlock Text="&#xE8E5;" FontFamily="Segoe MDL2 Assets" Margin="0,2,0,0" />
+							<TextBlock Margin="8,0,0,0" >Select A File</TextBlock>
+						</StackPanel>
+					</Button>
 				</StackPanel>
-				<ComboBox x:Name="onColorCombo" ItemsSource="{x:Bind colors}" ItemTemplate="{StaticResource colorCombo}" Header="On Event Colors"   ></ComboBox>
-				<ComboBox x:Name="offColorCombo" ItemsSource="{x:Bind colors}" ItemTemplate="{StaticResource colorCombo}" Header="Off Event Colors" ></ComboBox>
-				<ComboBox x:Name="framerateCombo"  Header="Playback Framerate" SelectedIndex="0"  >
-					<ComboBoxItem>30 FPS</ComboBoxItem>
-					<ComboBoxItem>60 FPS</ComboBoxItem>
-				</ComboBox>
+			</Grid>
+
+			<Grid Grid.Row="1" Padding="8" >
+
+				<StackPanel>
+					<ToggleSwitch IsOn="True" OffContent="Event Playback"  OnContent="Temporal Playback" x:Name="playbackType" Toggled="PlaybackType_Toggled" />
+
+					<StackPanel x:Name="test123">
+						<StackPanel Orientation="Horizontal">
+							<TextBox x:Name="frameTimeTB" InputScope="Number" Header="Time per frame(μS):" 
+					 Width="200" HorizontalAlignment="Left" VerticalAlignment="Top" Text="500"/>
+							<CheckBox   Margin="10,23,0,0" x:Name="realTimeCheckbox" Content="Real Time Playback" Checked="RealTimeCheckbox_Checked" Unchecked="RealTimeCheckbox_Unchecked"  ></CheckBox>
+						</StackPanel>
+
+						<StackPanel Orientation="Horizontal" Grid.Column="1" x:Name="numOfEventsStack" >
+							<TextBox  IsEnabled="False" InputScope="Number" Header="Number of events per frame:" x:Name="numOfEventInput"
+					  Width="200" HorizontalAlignment="Left" VerticalAlignment="Top" Text="1000"/>
+						</StackPanel>
+					</StackPanel>
 
 
-			</StackPanel>
-			
-			<MediaElement x:Name="mediaSimple"  Width="400" AutoPlay="True"/>
+
+
+
+					<StackPanel Orientation="Horizontal" Padding="0,10,0,0" >
+						<TextBox x:Name="maxFramesTB" InputScope="Number" Header="Maximum number of frames:" 
+					 Width="200" HorizontalAlignment="Left" VerticalAlignment="Top"  Text="100" />
+
+						<CheckBox  x:Name="allFrameCheckBox" Margin="10,23,0,0" Checked="AllFrameCheckBox_Checked" Content="All Frames" Unchecked="AllFrameCheckBox_Unchecked"   ></CheckBox>
+
+
+
+					</StackPanel>
+					<ComboBox x:Name="onColorCombo" ItemsSource="{x:Bind colors}" ItemTemplate="{StaticResource colorCombo}" Header="On Event Colors"  Margin="0,10,0,0" ></ComboBox>
+					<ComboBox x:Name="offColorCombo" ItemsSource="{x:Bind colors}" ItemTemplate="{StaticResource colorCombo}" Header="Off Event Colors" Margin="0,10,0,0" ></ComboBox>
+					<ComboBox x:Name="framerateCombo"  Header="Playback Framerate" SelectedIndex="0" Margin="0,10,0,0"  >
+						<ComboBoxItem>30 FPS</ComboBoxItem>
+						<ComboBoxItem>60 FPS</ComboBoxItem>
+					</ComboBox>
+
+					<ComboBox Margin="0,10,0,0" SelectedIndex="0"  Header="File Format" >
+						<ComboBoxItem>MP4</ComboBoxItem>
+						<ComboBoxItem>AVI</ComboBoxItem>
+						<ComboBoxItem>HEVC</ComboBoxItem>
+						<ComboBoxItem>WMV</ComboBoxItem>
+					</ComboBox>
+
+
+				</StackPanel>
+
+				<MediaElement x:Name="mediaSimple"  Width="400" AutoPlay="True"/>
+			</Grid>
 		</Grid>
 	</Grid>
+    
 </Page>
