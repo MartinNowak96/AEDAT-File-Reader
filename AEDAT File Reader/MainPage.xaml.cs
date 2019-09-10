@@ -46,6 +46,10 @@ namespace AEDAT_File_Reader
 				{
 					ContentFrame.Navigate(typeof(TestPage));
 				}
+				else if ((string)args.InvokedItem == "Event Chunks")
+				{
+					ContentFrame.Navigate(typeof(EventChunks));
+				}
 
 			}
         }

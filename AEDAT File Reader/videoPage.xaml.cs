@@ -125,7 +125,8 @@ namespace AEDAT_File_Reader
 				await invalidCameraDataDialog.ShowAsync();
 				return;
 			}
-
+			showLoading.IsActive = true;
+			backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Visible;
 			float playback_frametime = 1.0f / fps;
 			MediaComposition composition;
 			if (playbackType.IsOn)
@@ -151,8 +152,7 @@ namespace AEDAT_File_Reader
 
 		public async Task<MediaComposition> TimeBasedReconstruction(byte[] aedatFile, CameraParameters cam, EventColor onColor, EventColor offColor, int frameTime, int maxFrames, float playback_frametime)
 		{
-			showLoading.IsActive = true;
-			backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Visible;
+			
 			MediaComposition composition = new MediaComposition();
 			int lastTime = -999999;
 			int timeStamp;

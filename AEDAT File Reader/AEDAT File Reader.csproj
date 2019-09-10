@@ -102,6 +102,9 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
     <Compile Include="aedatUtilities.cs" />
+    <Compile Include="EventChunks.xaml.cs">
+      <DependentUpon>EventChunks.xaml</DependentUpon>
+    </Compile>
     <Compile Include="eventList.xaml.cs">
       <DependentUpon>eventList.xaml</DependentUpon>
     </Compile>
@@ -144,6 +147,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Page Include="EventChunks.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="eventList.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

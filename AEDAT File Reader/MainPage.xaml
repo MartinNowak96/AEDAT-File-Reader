@@ -53,6 +53,14 @@
 				</NavigationViewItem.Icon>
 				
 			</NavigationViewItem>
+
+			<NavigationViewItem Content="Event Chunks" x:Name="eventChunks">
+
+				<NavigationViewItem.Icon>
+					<FontIcon Glyph="&#xE8C8;" FontFamily="Segoe MDL2 Assets" />
+				</NavigationViewItem.Icon>
+
+			</NavigationViewItem>
 			<NavigationViewItem Content="Video" x:Name="video">
 
 				<NavigationViewItem.Icon>
