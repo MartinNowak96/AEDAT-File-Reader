@@ -131,12 +131,12 @@ namespace AEDAT_File_Reader
 
 			if (playbackType.IsOn)
 			{
-				await TimeBasedReconstruction(aedatFile, cam, frameTime, maxFrames, folder);
+				await TimeBasedReconstruction(aedatFile, cam, frameTime, maxFrames, folder, file.Name);
 			}
 			else
 			{
 				int numOfEvents = Int32.Parse(numOfEventInput.Text);
-				await EventBasedReconstruction(aedatFile, cam, numOfEvents, maxFrames, folder);
+				await EventBasedReconstruction(aedatFile, cam, numOfEvents, maxFrames, folder, file.Name);
 			}
 
 			showLoading.IsActive = false;
@@ -145,10 +145,9 @@ namespace AEDAT_File_Reader
 
 
 
-		public async Task TimeBasedReconstruction(byte[] aedatFile, CameraParameters cam,  int frameTime, int maxFrames, StorageFolder folder)
+		public async Task TimeBasedReconstruction(byte[] aedatFile, CameraParameters cam,  int frameTime, int maxFrames, StorageFolder folder,string fileName)
 		{
 
-			MediaComposition composition = new MediaComposition();
 			int lastTime = -999999;
 			int timeStamp;
 			int frameCount = 0;
@@ -179,9 +178,12 @@ namespace AEDAT_File_Reader
 				{
 					if (lastTime + frameTime <= timeStamp) // Collected events within specified timeframe, add frame to video
 					{
-
-						StorageFile file = await folder.CreateFileAsync("test" + frameCount +".csv", CreationCollisionOption.GenerateUniqueName);
-						await Windows.Storage.FileIO.WriteTextAsync(file, "On/Off,X,Y,Timestamp\n" + fileConent);
+						try
+						{
+							StorageFile file = await folder.CreateFileAsync(fileName + frameCount + ".csv", CreationCollisionOption.GenerateUniqueName);
+							await Windows.Storage.FileIO.WriteTextAsync(file, "On/Off,X,Y,Timestamp\n" + fileConent);
+						} catch { }
+						
 						
 						fileConent = "";
 						frameCount++;
@@ -198,7 +200,7 @@ namespace AEDAT_File_Reader
 
 		}
 
-		public async Task EventBasedReconstruction(byte[] aedatFile, CameraParameters cam, int eventsPerFrame, int maxFrames, StorageFolder folder)
+		public async Task EventBasedReconstruction(byte[] aedatFile, CameraParameters cam, int eventsPerFrame, int maxFrames, StorageFolder folder, string fileName)
 		{
 			int frameCount = 0;
 			int eventCount = 0;
@@ -221,20 +223,9 @@ namespace AEDAT_File_Reader
 				if (eventCount >= eventsPerFrame) // Collected events within specified timeframe, add frame to video
 				{
 					eventCount = 0;
-					StorageFile file = await folder.CreateFileAsync("test" + frameCount + ".csv", CreationCollisionOption.GenerateUniqueName);
-					var stream = await file.OpenAsync(FileAccessMode.ReadWrite);
-					using (var outputStream = stream.GetOutputStreamAt(0))
-					{
-						using (var dataWriter = new Windows.Storage.Streams.DataWriter(outputStream))
-						{
-							if (true)
-							{
-								dataWriter.WriteString("On/Off,X,Y,Timestamp\n");
-							}
-							dataWriter.WriteString(fileConent);
-						}
+					StorageFile file = await folder.CreateFileAsync(fileName + frameCount + ".csv", CreationCollisionOption.GenerateUniqueName);
+					await Windows.Storage.FileIO.WriteTextAsync(file, "On/Off,X,Y,Timestamp\n" + fileConent);
 
-					}
 					fileConent = "";
 					frameCount++;
 					// Stop adding frames to video if max frames has been reached
