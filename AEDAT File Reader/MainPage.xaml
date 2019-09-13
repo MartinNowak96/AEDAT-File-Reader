@@ -68,7 +68,16 @@
 				</NavigationViewItem.Icon>
 
 			</NavigationViewItem>
-			<NavigationViewItem Content="Testing" x:Name="test" >
+
+            <NavigationViewItem Content="Generate Frames" x:Name="generateFrame">
+
+                <NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xE8B9;" FontFamily="Segoe MDL2 Assets" />
+                </NavigationViewItem.Icon>
+
+            </NavigationViewItem>
+
+            <NavigationViewItem Content="Testing" x:Name="test" >
 				<NavigationViewItem.Icon>
 					<FontIcon Glyph="&#xE7BA;" FontFamily="Segoe MDL2 Assets" />
 				</NavigationViewItem.Icon>

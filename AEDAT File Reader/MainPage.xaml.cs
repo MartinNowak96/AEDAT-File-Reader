@@ -50,8 +50,12 @@ namespace AEDAT_File_Reader
 				{
 					ContentFrame.Navigate(typeof(EventChunks));
 				}
+                else if ((string)args.InvokedItem == "Generate Frames")
+                {
+                    ContentFrame.Navigate(typeof(GenerateFrames));
+                }
 
-			}
+            }
         }
 
 
