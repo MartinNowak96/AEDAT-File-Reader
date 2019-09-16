@@ -97,7 +97,12 @@ namespace AEDAT_File_Reader
 
             // Select AEDAT file to be converted
             StorageFile file = await picker.PickSingleFileAsync();
-            if (file == null) return;
+            if (file == null)
+            {
+                showLoading.IsActive = false;
+                backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
+                return;
+            }
 
             byte[] aedatFile = await AedatUtilities.ReadToBytes(file);
 
@@ -120,18 +125,26 @@ namespace AEDAT_File_Reader
             };
             picker2.FileTypeFilter.Add("*");
 
+
             // Select AEDAT file to be converted
             StorageFolder folder = await picker2.PickSingleFolderAsync();
-            if (folder == null) return;
+            if (folder == null) {
+                showLoading.IsActive = false;
+                backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
+                return;
+            }
+
+
+            StorageFolder folder2 = await folder.CreateFolderAsync(file.Name.Replace(".aedat","") +" Frames");
 
             if (playbackType.IsOn)
             {
-                await TimeBasedReconstruction(aedatFile, cam, onColor, offColor, frameTime, maxFrames, folder, file.Name);
+                await TimeBasedReconstruction(aedatFile, cam, onColor, offColor, frameTime, maxFrames, folder2, file.Name.Replace(".aedat", ""));
             }
             else
             {
                 int numOfEvents = Int32.Parse(numOfEventInput.Text);
-                await EventBasedReconstruction(aedatFile, cam, onColor, offColor, numOfEvents, maxFrames, folder, file.Name);
+                await EventBasedReconstruction(aedatFile, cam, onColor, offColor, numOfEvents, maxFrames, folder2, file.Name.Replace(".aedat", ""));
             }
             showLoading.IsActive = false;
             backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
