@@ -53,7 +53,7 @@
                     <Button x:Name="SelectFile" Tapped="SelectFile_Tapped" >
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE8E5;" FontFamily="Segoe MDL2 Assets" Margin="0,2,0,0" />
-                            <TextBlock Margin="8,0,0,0" >Select A File</TextBlock>
+                            <TextBlock Margin="8,0,0,0" >Select Files</TextBlock>
                         </StackPanel>
                     </Button>
                 </StackPanel>

@@ -95,57 +95,64 @@ namespace AEDAT_File_Reader
             picker.FileTypeFilter.Add(".AEDAT");
 
 
-            // Select AEDAT file to be converted
-            StorageFile file = await picker.PickSingleFileAsync();
-            if (file == null)
+			// Select AEDAT file to be converted
+			IReadOnlyList<StorageFile> files = await picker.PickMultipleFilesAsync();
+            if (files == null)
             {
                 showLoading.IsActive = false;
                 backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
                 return;
             }
 
-            byte[] aedatFile = await AedatUtilities.ReadToBytes(file);
-
-            // Determine camera type from AEDAT header
-            string cameraTypeSearch = AedatUtilities.FindLineInHeader(AedatUtilities.hardwareInterfaceCheck, ref aedatFile);
-            CameraParameters cam = AedatUtilities.ParseCameraModel(cameraTypeSearch);
-            if (cam == null)
-            {
-                await invalidCameraDataDialog.ShowAsync();
-                return;
-            }
-            showLoading.IsActive = true;
-            backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Visible;
-            float playback_frametime = 1.0f / fps;
-
-            var picker2 = new FolderPicker
-            {
-                ViewMode = PickerViewMode.Thumbnail,
-                SuggestedStartLocation = PickerLocationId.PicturesLibrary
-            };
-            picker2.FileTypeFilter.Add("*");
+			var picker2 = new FolderPicker
+			{
+				ViewMode = PickerViewMode.Thumbnail,
+				SuggestedStartLocation = PickerLocationId.PicturesLibrary
+			};
+			picker2.FileTypeFilter.Add("*");
 
 
-            // Select AEDAT file to be converted
-            StorageFolder folder = await picker2.PickSingleFolderAsync();
-            if (folder == null) {
-                showLoading.IsActive = false;
-                backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
-                return;
-            }
 
 
-            StorageFolder folder2 = await folder.CreateFolderAsync(file.Name.Replace(".aedat","") +" Frames");
+			// Select AEDAT file to be converted
+			StorageFolder folder = await picker2.PickSingleFolderAsync();
+			if (folder == null)
+			{
+				showLoading.IsActive = false;
+				backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
+				return;
+			}
 
-            if (playbackType.IsOn)
-            {
-                await TimeBasedReconstruction(aedatFile, cam, onColor, offColor, frameTime, maxFrames, folder2, file.Name.Replace(".aedat", ""));
-            }
-            else
-            {
-                int numOfEvents = Int32.Parse(numOfEventInput.Text);
-                await EventBasedReconstruction(aedatFile, cam, onColor, offColor, numOfEvents, maxFrames, folder2, file.Name.Replace(".aedat", ""));
-            }
+
+			foreach (var file in files)
+			{
+
+				byte[] aedatFile = await AedatUtilities.ReadToBytes(file);
+
+				// Determine camera type from AEDAT header
+				string cameraTypeSearch = AedatUtilities.FindLineInHeader(AedatUtilities.hardwareInterfaceCheck, ref aedatFile);
+				CameraParameters cam = AedatUtilities.ParseCameraModel(cameraTypeSearch);
+				if (cam == null)
+				{
+					await invalidCameraDataDialog.ShowAsync();
+					return;
+				}
+				showLoading.IsActive = true;
+				backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Visible;
+				float playback_frametime = 1.0f / fps;
+
+				StorageFolder folder2 = await folder.CreateFolderAsync(file.Name.Replace(".aedat", "") + (playbackType.IsOn ? " time based" : " event based") + " Frames");
+
+				if (playbackType.IsOn)
+				{
+					await TimeBasedReconstruction(aedatFile, cam, onColor, offColor, frameTime, maxFrames, folder2, file.Name.Replace(".aedat", ""));
+				}
+				else
+				{
+					int numOfEvents = Int32.Parse(numOfEventInput.Text);
+					await EventBasedReconstruction(aedatFile, cam, onColor, offColor, numOfEvents, maxFrames, folder2, file.Name.Replace(".aedat", ""));
+				}
+			}
             showLoading.IsActive = false;
             backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
 
