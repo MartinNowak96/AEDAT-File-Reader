@@ -101,25 +101,13 @@ namespace AEDAT_File_Reader
 
 
 			// Select AEDAT file to be converted
-			StorageFile file = await picker.PickSingleFileAsync();
-            if (file == null) {
+			IReadOnlyList<StorageFile> files = await picker.PickMultipleFilesAsync();
+
+			if (files == null) {
                 showLoading.IsActive = false;
                 backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
                 return;
-            } 
-
-			byte[] aedatFile = await AedatUtilities.ReadToBytes(file);
-
-			// Determine camera type from AEDAT header
-			string cameraTypeSearch = AedatUtilities.FindLineInHeader(AedatUtilities.hardwareInterfaceCheck, ref aedatFile);
-			CameraParameters cam = AedatUtilities.ParseCameraModel(cameraTypeSearch);
-			if (cam == null)
-			{
-				await invalidCameraDataDialog.ShowAsync();
-				return;
-			}
-			showLoading.IsActive = true;
-			backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Visible;
+            }
 
 
 			var picker2 = new FolderPicker
@@ -128,27 +116,46 @@ namespace AEDAT_File_Reader
 				SuggestedStartLocation = PickerLocationId.PicturesLibrary
 			};
 			picker2.FileTypeFilter.Add("*");
-
 			// Select AEDAT file to be converted
 			StorageFolder folder = await picker2.PickSingleFolderAsync();
-            if (folder == null)
-            {
-                showLoading.IsActive = false;
-                backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
-                return;
-            }
-            StorageFolder folder2 = await folder.CreateFolderAsync(file.Name.Replace(".aedat", "") + " Event Chunks");
+			if (folder == null)
+			{
+				showLoading.IsActive = false;
+				backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
+				return;
+			}
 
 
-            if (playbackType.IsOn)
+			foreach(StorageFile file in files)
 			{
-				await TimeBasedReconstruction(aedatFile, cam, frameTime, maxFrames, folder2, file.Name.Replace(".aedat", ""));
+				byte[] aedatFile = await AedatUtilities.ReadToBytes(file);
+
+				// Determine camera type from AEDAT header
+				string cameraTypeSearch = AedatUtilities.FindLineInHeader(AedatUtilities.hardwareInterfaceCheck, ref aedatFile);
+				CameraParameters cam = AedatUtilities.ParseCameraModel(cameraTypeSearch);
+				if (cam == null)
+				{
+					await invalidCameraDataDialog.ShowAsync();
+					return;
+				}
+				showLoading.IsActive = true;
+				backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Visible;
+
+
+				StorageFolder folder2 = await folder.CreateFolderAsync(file.Name.Replace(".aedat", "") + " Event Chunks");
+
+
+				if (playbackType.IsOn)
+				{
+					await TimeBasedReconstruction(aedatFile, cam, frameTime, maxFrames, folder2, file.Name.Replace(".aedat", ""));
+				}
+				else
+				{
+					int numOfEvents = Int32.Parse(numOfEventInput.Text);
+					await EventBasedReconstruction(aedatFile, cam, numOfEvents, maxFrames, folder2, file.Name.Replace(".aedat", ""));
+				}
 			}
-			else
-			{
-				int numOfEvents = Int32.Parse(numOfEventInput.Text);
-				await EventBasedReconstruction(aedatFile, cam, numOfEvents, maxFrames, folder2, file.Name.Replace(".aedat", ""));
-			}
+			
 
 			showLoading.IsActive = false;
 			backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
