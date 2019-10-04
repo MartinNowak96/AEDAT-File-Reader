@@ -37,14 +37,7 @@ namespace AEDAT_File_Reader
 	{
 		public EventChunks()
 		{
-			colors = new ObservableCollection<EventColor>
-			{
-				new EventColor("Green", EventColor.Green),
-				new EventColor("Red", EventColor.Red),
-				new EventColor("Blue", EventColor.Blue),
-				new EventColor("Gray", EventColor.Gray),
-				new EventColor("White", EventColor.White)
-			};
+
 			this.InitializeComponent();
 		}
 
@@ -66,8 +59,6 @@ namespace AEDAT_File_Reader
 			Content = "Could not parse camera parameters.",
 			CloseButtonText = "Close"
 		};
-
-		public ObservableCollection<EventColor> colors;
 
 		string previousValueMaxFrame = "100";
 		string previousValueTimePerFrame = "1000";

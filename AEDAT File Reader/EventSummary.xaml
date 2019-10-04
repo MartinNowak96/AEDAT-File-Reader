@@ -11,104 +11,85 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Grid>
-        
-        <!-- Export Popup-->
-        <Popup VerticalAlignment="Center"  HorizontalAlignment="Center" Grid.ColumnSpan="3" x:Name="exportSettings" IsLightDismissEnabled="True" Width="250" Height="280"  >
 
-            <Popup.ChildTransitions>
-                <TransitionCollection>
-                    <PopupThemeTransition FromHorizontalOffset="0" FromVerticalOffset="200"/>
-                </TransitionCollection>
-            </Popup.ChildTransitions>
-            <StackPanel Background="#FF1F1F1F" Padding="12">
-                <Grid>
-                    <StackPanel Background="Transparent" Padding="5" >
-                        <TextBlock Text="Export Settings" FontSize="16" Margin="0,0,0,4"/>
-                        <Grid >
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="250"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <ToggleSwitch x:Name="showAverages" Header="Show Averages of Each Column?"  OnContent="Shown" OffContent="Hidden" />
-                                <Button x:Name="exportFromPopUp" Content="Export" HorizontalAlignment="Right" Tapped="exportFromPopUp_Tapped" />
-                            </StackPanel>
-                            <!-- Items in popup-->
+		<Grid>
+			<VisualStateManager.VisualStateGroups>
+				<VisualStateGroup x:Name="WindowStates">
+					<VisualState x:Name="WideState">
+						<VisualState.StateTriggers>
+							<AdaptiveTrigger MinWindowWidth="600"  />
+						</VisualState.StateTriggers>
+						<VisualState.Setters>
+							<Setter Target="test123.Orientation" Value="Horizontal" ></Setter>
+							<Setter Target="numOfEventsStack.Margin" Value="20,0,0,0" ></Setter>
+						</VisualState.Setters>
+					</VisualState>
+					<VisualState x:Name="NarrowState">
+						<VisualState.StateTriggers>
+							<AdaptiveTrigger MinWindowWidth="0"  />
+						</VisualState.StateTriggers>
+						<VisualState.Setters>
+							<Setter Target="test123.Orientation" Value="Vertical" ></Setter>
+							<Setter Target="numOfEventsStack.Margin" Value="0,0,0,0" ></Setter>
+						</VisualState.Setters>
+					</VisualState>
+				</VisualStateGroup>
+			</VisualStateManager.VisualStateGroups>
+			<Grid>
+				<Grid.RowDefinitions>
+					<RowDefinition Height="Auto" />
+					<RowDefinition Height="*"/>
+				</Grid.RowDefinitions>
+				<ProgressRing IsActive="False" Grid.ColumnSpan="10"  Grid.RowSpan="10" x:Name="showLoading" Width="150" Height="150" HorizontalAlignment="Center" VerticalAlignment="Center"  Canvas.ZIndex="10000"/>
+				<Rectangle x:Name="backgroundTint" Visibility="Collapsed" Opacity=".5" HorizontalAlignment="Stretch"  VerticalAlignment="Stretch" Fill="Black" Grid.ColumnSpan="10"  Grid.RowSpan="10" Canvas.ZIndex="999" ></Rectangle>
+				<Grid Background="#2f2f2f"   >
+					<StackPanel Orientation="Horizontal">
+						<Button x:Name="SelectFile" Tapped="SelectFile_Tapped" >
+							<StackPanel Orientation="Horizontal">
+								<TextBlock Text="&#xE8E5;" FontFamily="Segoe MDL2 Assets" Margin="0,2,0,0" />
+								<TextBlock Margin="8,0,0,0" >Select Files</TextBlock>
+							</StackPanel>
+						</Button>
+					</StackPanel>
+				</Grid>
 
-                        </Grid>
-                    </StackPanel>
+				<Grid Grid.Row="1" Padding="8" >
+
+					<StackPanel>
+						<ToggleSwitch IsOn="True" OffContent="Event Grouping"  OnContent="Temporal Grouping" x:Name="playbackType" Toggled="PlaybackType_Toggled" />
+
+						<StackPanel x:Name="test123">
+							<StackPanel Orientation="Horizontal">
+								<TextBox x:Name="frameTimeTB" InputScope="Number" Header="Time per Group(μS):" 
+					 Width="200" HorizontalAlignment="Left" VerticalAlignment="Top" Text="500"/>
+								<CheckBox   Margin="10,23,0,0" x:Name="realTimeCheckbox" Content="Real Time Playback" Checked="RealTimeCheckbox_Checked" Unchecked="RealTimeCheckbox_Unchecked"  ></CheckBox>
+							</StackPanel>
+
+							<StackPanel Orientation="Horizontal" Grid.Column="1" x:Name="numOfEventsStack" >
+								<TextBox  IsEnabled="False" InputScope="Number" Header="Number of events per file:" x:Name="numOfEventInput"
+					  Width="200" HorizontalAlignment="Left" VerticalAlignment="Top" Text="1000"/>
+							</StackPanel>
+						</StackPanel>
 
 
-                </Grid>
-            </StackPanel>
-        </Popup>
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition  Height="Auto"/>
-                <RowDefinition  Height="*"/>
-            </Grid.RowDefinitions>
+						<StackPanel Orientation="Horizontal" Padding="0,10,0,0" >
+							<TextBox x:Name="maxFramesTB" InputScope="Number" Header="Maximum number of files:" 
+					 Width="200" HorizontalAlignment="Left" VerticalAlignment="Top"  Text="100" />
+
+							<CheckBox  x:Name="allFrameCheckBox" Margin="10,23,0,0" Checked="AllFrameCheckBox_Checked" Content="No Limit" Unchecked="AllFrameCheckBox_Unchecked"   ></CheckBox>
 
 
 
+						</StackPanel>
 
-            <Grid Background="#2f2f2f">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="6*" />
-                </Grid.ColumnDefinitions>
-                <StackPanel Orientation="Horizontal">
-                    <Button x:Name="selectFile" Tapped="selectFile_Tapped" >Select A File</Button>
-                    <Button Margin="5,0,0,0" x:Name="export" Tapped="export_Tapped"  >Export to CSV</Button>
-                </StackPanel>
-                
-            </Grid>
+						<ToggleSwitch IsOn="True" OffContent="Hide Headers"  OnContent="Show Headers" Margin="0,10,0,0"/>
 
-            <Grid  Grid.Row="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="6*" />
 
-                </Grid.ColumnDefinitions>
+					</StackPanel>
 
-                <Grid Grid.Column="0"  RequestedTheme="Dark" >
-                    <controls:DataGrid
-      Grid.Row="1"
-                    RequestedTheme="Dark"
-        x:Name="dataGrid"
-        Margin="12"
-        VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
-        HorizontalScrollBarVisibility="Visible"
-        VerticalScrollBarVisibility="Visible"
-        AlternatingRowBackground="Transparent"
-        AlternatingRowForeground="Gray"
-        AreRowDetailsFrozen="False"
-        AreRowGroupHeadersFrozen="True"
-        AutoGenerateColumns="False"
-        CanUserSortColumns="False"
-        CanUserReorderColumns="True"
-        CanUserResizeColumns="True"
-        ColumnHeaderHeight="32"
-        MaxColumnWidth="500"
-        FrozenColumnCount="0"
-        GridLinesVisibility="None"
-        HeadersVisibility="Column"
-        IsReadOnly="False"
-      
-        RowDetailsVisibilityMode="Collapsed"
-                    
-        SelectionMode="Extended" RowGroupHeaderPropertyNameAlternative="Range" >
-                        <controls:DataGrid.Columns>
-                            <controls:DataGridTextColumn Header="Starting Time" Binding="{Binding startingTime}" Tag="Starting_Time" />
-                            <controls:DataGridTextColumn Header="Ending Time" Binding="{Binding endingTime}" Tag="Ending_Time" />
-                            <controls:DataGridTextColumn Header="Number of On Events" Binding="{Binding duration}" Tag="Duration" />
-                            <controls:DataGridTextColumn Header="Number of Off Events" Binding="{Binding eventCount}" Tag="Number_of_Events" />
-                            <controls:DataGridTextColumn Header="Average On Events/Second" Binding="{Binding avgEventsPerSecond}" Tag="Average_Events/_Second" />
-                            <controls:DataGridTextColumn Header="Average Off Events/ Second" Binding="{Binding avgEventsPerSecond}" Tag="Average_Events/_Second" />
-                            <controls:DataGridTextColumn Header="Average Events/ Second" Binding="{Binding avgEventsPerSecond}" Tag="Average_Events/_Second" />
-
-                        </controls:DataGrid.Columns>
-                    </controls:DataGrid>
-                </Grid>
-
-                
-            </Grid>
-        </Grid>
-    </Grid>
+					<MediaElement x:Name="mediaSimple"  Width="400" AutoPlay="True"/>
+				</Grid>
+			</Grid>
+		</Grid>
+	</Grid>
 </Page>
