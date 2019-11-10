@@ -126,8 +126,6 @@ namespace AEDAT_File_Reader
 					await EventBasedReconstruction(aedatFile, cam, numOfEvents, maxFrames, folder2, file.Name.Replace(".aedat", ""));
 				}
 			}
-
-
 			showLoading.IsActive = false;
 			backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
 		}
@@ -140,10 +138,14 @@ namespace AEDAT_File_Reader
 			int lastTime = -999999;
 			int timeStamp;
 			int frameCount = 0;
+			int writeBufferSize = 5000;			// Maximum number of characters to collect before writing to disk
 
 			int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref aedatFile);   // find end of aedat header
 			byte[] currentDataEntry = new byte[AedatUtilities.dataEntrySize];
 
+			// Create CSV file
+			StorageFile file = await folder.CreateFileAsync(fileName + ".csv", CreationCollisionOption.GenerateUniqueName);
+			await Windows.Storage.FileIO.WriteTextAsync(file, "On Count,Off Count, Combined Count\n");
 
 			string fileConent = "";
 			int onCount = 0;
@@ -179,6 +181,13 @@ namespace AEDAT_File_Reader
 						try
 						{
 							fileConent += onCount + "," + offCount + "," + bothCount + "\n";
+
+							// Write to file if buffer size is reached
+							if (fileConent.Length > writeBufferSize) 
+							{
+								await FileIO.AppendTextAsync(file, fileConent);
+								fileConent = "";
+							}
 						}
 						catch { }
 
@@ -195,12 +204,9 @@ namespace AEDAT_File_Reader
 						lastTime = timeStamp;
 					}
 				}
-
 			}
-
-			StorageFile file = await folder.CreateFileAsync(fileName + frameCount + ".csv", CreationCollisionOption.GenerateUniqueName);
-			await Windows.Storage.FileIO.WriteTextAsync(file, "On Count,Off Count, Combined Count\n" + fileConent);
-
+			// Append any remaining data
+			await Windows.Storage.FileIO.AppendTextAsync(file, fileConent);
 		}
 
 		public async Task EventBasedReconstruction(byte[] aedatFile, CameraParameters cam, int eventsPerFrame, int maxFrames, StorageFolder folder, string fileName)
@@ -237,10 +243,7 @@ namespace AEDAT_File_Reader
 						return;
 					}
 				}
-
-
 			}
-
 		}
 
 		private (int, int) ParseVideoSettings()
@@ -270,9 +273,6 @@ namespace AEDAT_File_Reader
 			{
 				throw new FormatException();
 			}
-
-
-
 			return (frameTime, maxFrames);
 		}
 
