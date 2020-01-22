@@ -233,14 +233,7 @@ namespace AEDAT_File_Reader
 
 		private void CordCol_Toggled(object sender, Windows.UI.Xaml.RoutedEventArgs e)
 		{
-			if (cordCol.IsOn)
-			{
-				pixelNumber.IsEnabled = true;
-			}
-			else
-			{
-				pixelNumber.IsEnabled = false;
-			}
+			pixelNumber.IsEnabled = cordCol.IsOn;
 		}
 	}
 }

@@ -323,6 +323,27 @@ namespace AEDAT_File_Reader
 			return header;
 		}
 
+
+		public static async Task<Tuple<int,CameraParameters>> GetHeaderData(StorageFile file)
+		{
+			byte[] header = new byte[524288]; // Header is usually ~300KB. Read first 0.5MB to be safe.
+			Stream fs = (await file.OpenReadAsync()).AsStreamForRead();
+			
+			using (BinaryReader reader = new BinaryReader(fs))
+			{
+				reader.Read(header, 0, 524288);
+				int endOfHeader = GetEndOfHeaderIndex(ref header);
+				string cameraTypeSearch = FindLineInHeader(AedatUtilities.hardwareInterfaceCheck, ref header);
+				CameraParameters cam = ParseCameraModel(cameraTypeSearch);
+				reader.Dispose();
+				return new Tuple<int, CameraParameters> ( endOfHeader, cam );
+				
+			}
+			
+		}
+
+
+
 		/// <summary>
 		/// Sets the pixel from color/coords in the pixel array(passed by reference).
 		/// </summary>

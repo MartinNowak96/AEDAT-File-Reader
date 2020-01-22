@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.Storage.Pickers;
@@ -99,11 +100,18 @@ namespace AEDAT_File_Reader
 
 			foreach (StorageFile file in files)
 			{
-				byte[] aedatFile = await AedatUtilities.ReadToBytes(file);
+				//byte[] aedatFile = await AedatUtilities.ReadToBytes(file);
+
+				var headerData = await AedatUtilities.GetHeaderData(file);
+				
+				var aedatFile  = (await file.OpenReadAsync()).AsStreamForRead();
+				// Newstuff
+				//FileStream aedatFile = new FileStream(file.Path, FileMode.Open, FileAccess.Read);
+				aedatFile.Seek(headerData.Item1, SeekOrigin.Begin);//skip over header.
+
 
 				// Determine camera type from AEDAT header
-				string cameraTypeSearch = AedatUtilities.FindLineInHeader(AedatUtilities.hardwareInterfaceCheck, ref aedatFile);
-				CameraParameters cam = AedatUtilities.ParseCameraModel(cameraTypeSearch);
+				CameraParameters cam = headerData.Item2;
 				if (cam == null)
 				{
 					await invalidCameraDataDialog.ShowAsync();
@@ -132,118 +140,158 @@ namespace AEDAT_File_Reader
 
 
 
-		public async Task TimeBasedReconstruction(byte[] aedatFile, CameraParameters cam, int frameTime, int maxFrames, StorageFolder folder, string fileName)
+		public async Task TimeBasedReconstruction(Stream aedatFile, CameraParameters cam, int frameTime, int maxFrames, StorageFolder folder, string fileName)
 		{
-
+			byte[] bytes = new byte[5*Convert.ToInt32(Math.Pow(10,8))]; // Read 0.5 GB at a time
 			int lastTime = -999999;
 			int timeStamp;
 			int frameCount = 0;
-			int writeBufferSize = 5000;			// Maximum number of characters to collect before writing to disk
+			int writeBufferSize = 50000;			// Maximum number of characters to collect before writing to disk
 
-			int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref aedatFile);   // find end of aedat header
 			byte[] currentDataEntry = new byte[AedatUtilities.dataEntrySize];
 
 			// Create CSV file
 			StorageFile file = await folder.CreateFileAsync(fileName + ".csv", CreationCollisionOption.GenerateUniqueName);
-			await Windows.Storage.FileIO.WriteTextAsync(file, "On Count,Off Count, Combined Count\n");
+			await FileIO.WriteTextAsync(file, "On Count,Off Count, Combined Count\n");
 
 			string fileConent = "";
 			int onCount = 0;
 			int offCount = 0;
 			int bothCount = 0;
+
+			int bytesRead = aedatFile.Read(bytes, 0, bytes.Length);
 			// Read through AEDAT file
-			for (int i = endOfHeaderIndex, length = aedatFile.Length; i < length; i += AedatUtilities.dataEntrySize)    // iterate through file, 8 bytes at a time.
+			while (bytesRead != 0 && frameCount < maxFrames)
 			{
-				for (int j = 0; j < 8; j++)    // from i get the next 8 bytes
+				for (int i = 0, length = bytesRead; i < length; i += AedatUtilities.dataEntrySize)    // iterate through file, 8 bytes at a time.
 				{
-					currentDataEntry[j] = aedatFile[i + (7 - j)];
-				}
-				timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes, uS
-
-				bool eventType = cam.getEventType(currentDataEntry);
-				if (eventType)
-				{
-					onCount++;
-				}
-				else
-				{
-					offCount++;
-				}
-				bothCount++;
-				if (lastTime == -999999)
-				{
-					lastTime = timeStamp;
-				}
-				else
-				{
-					if (lastTime + frameTime <= timeStamp) // Collected events within specified timeframe, add frame to video
+					for (int j = 0; j < 8; j++)    // from i get the next 8 bytes
 					{
-						try
-						{
-							fileConent += onCount + "," + offCount + "," + bothCount + "\n";
+						currentDataEntry[j] = bytes[i + (7 - j)];
+					}
+					timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes, uS
 
-							// Write to file if buffer size is reached
-							if (fileConent.Length > writeBufferSize) 
-							{
-								await FileIO.AppendTextAsync(file, fileConent);
-								fileConent = "";
-							}
-						}
-						catch { }
+					bool eventType = cam.getEventType(currentDataEntry);
+					_ = eventType == true ? onCount++ : offCount++;
+					bothCount++;
 
-						bothCount = 0;
-						onCount = 0;
-						offCount = 0;
-
-						frameCount++;
-						// Stop adding frames to video if max frames has been reached
-						if (frameCount >= maxFrames)
-						{
-							break;
-						}
+					if (lastTime == -999999)
+					{
 						lastTime = timeStamp;
 					}
-				}
-			}
-			// Append any remaining data
-			await Windows.Storage.FileIO.AppendTextAsync(file, fileConent);
-		}
-
-		public async Task EventBasedReconstruction(byte[] aedatFile, CameraParameters cam, int eventsPerFrame, int maxFrames, StorageFolder folder, string fileName)
-		{
-			int frameCount = 0;
-			int eventCount = 0;
-			int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref aedatFile);   // find end of aedat header
-			byte[] currentDataEntry = new byte[AedatUtilities.dataEntrySize];
-
-			string fileConent = "";
-			// Read through AEDAT file
-			for (int i = endOfHeaderIndex, length = aedatFile.Length; i < length; i += AedatUtilities.dataEntrySize)    // iterate through file, 8 bytes at a time.
-			{
-				for (int j = 0; j < 8; j++)    // from i get the next 8 bytes
-				{
-					currentDataEntry[j] = aedatFile[i + (7 - j)];
-				}
-				int timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes, uS
-				int[] XY = cam.getXY(currentDataEntry, cam.cameraY, cam.cameraX);
-				bool eventType = cam.getEventType(currentDataEntry);
-				fileConent += eventType + "," + XY[0] + "," + XY[1] + "," + timeStamp;
-				eventCount++;
-				if (eventCount >= eventsPerFrame) // Collected events within specified timeframe, add frame to video
-				{
-					eventCount = 0;
-					StorageFile file = await folder.CreateFileAsync(fileName + frameCount + ".csv", CreationCollisionOption.GenerateUniqueName);
-					await Windows.Storage.FileIO.WriteTextAsync(file, "On/Off,X,Y,Timestamp\n" + fileConent);
-
-					fileConent = "";
-					frameCount++;
-					// Stop adding frames to video if max frames has been reached
-					if (frameCount >= maxFrames)
+					else
 					{
-						return;
+						if (lastTime + frameTime <= timeStamp) // Collected events within specified timeframe, add frame to video
+						{
+							try
+							{
+								fileConent += onCount + "," + offCount + "," + bothCount + "\n";
+
+								// Write to file if buffer size is reached
+								if (fileConent.Length > writeBufferSize)
+								{
+									await FileIO.AppendTextAsync(file, fileConent);
+									fileConent = "";
+								}
+							}
+							catch { }
+
+							bothCount = 0;
+							onCount = 0;
+							offCount = 0;
+
+							frameCount++;
+							// Stop adding frames to video if max frames has been reached
+							if (frameCount >= maxFrames)
+							{
+								break;
+							}
+							lastTime = timeStamp;
+						}
 					}
 				}
+				bytesRead = aedatFile.Read(bytes, 0, bytes.Length);
 			}
+			
+			// Append any remaining data
+			await FileIO.AppendTextAsync(file, fileConent);
+		}
+
+		public async Task EventBasedReconstruction(Stream aedatFile, CameraParameters cam, int eventsPerFrame, int maxFrames, StorageFolder folder, string fileName)
+		{
+			byte[] bytes = new byte[5 * Convert.ToInt32(Math.Pow(10, 8))]; // Read 0.5 GB at a time
+			int lastTime = -999999;
+			int timeStamp;
+			int frameCount = 0;
+			int writeBufferSize = 50000;            // Maximum number of characters to collect before writing to disk
+
+			byte[] currentDataEntry = new byte[AedatUtilities.dataEntrySize];
+
+			// Create CSV file
+			StorageFile file = await folder.CreateFileAsync(fileName + ".csv", CreationCollisionOption.GenerateUniqueName);
+			await FileIO.WriteTextAsync(file, "On Count,Off Count, Duration\n");
+
+			string fileConent = "";
+			int onCount = 0;
+			int offCount = 0;
+			int bothCount = 0;
+
+			int bytesRead = aedatFile.Read(bytes, 0, bytes.Length);
+			// Read through AEDAT file
+			while (bytesRead != 0 && frameCount < maxFrames)
+			{
+				for (int i = 0, length = bytesRead; i < length; i += AedatUtilities.dataEntrySize)    // iterate through file, 8 bytes at a time.
+				{
+					for (int j = 0; j < 8; j++)    // from i get the next 8 bytes
+					{
+						currentDataEntry[j] = bytes[i + (7 - j)];
+					}
+					timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes, uS
+
+					bool eventType = cam.getEventType(currentDataEntry);
+					_ = eventType == true ? onCount++ : offCount++;
+					bothCount++;
+					
+					if (lastTime == -999999)
+					{
+						lastTime = timeStamp;
+					}
+					else
+					{
+						if (bothCount >= eventsPerFrame) // Collected enough events, add frame to video
+						{
+							try
+							{
+								fileConent += onCount + "," + offCount + "," + (timeStamp - lastTime) + "\n";
+
+								// Write to file if buffer size is reached
+								if (fileConent.Length > writeBufferSize)
+								{
+									await FileIO.AppendTextAsync(file, fileConent);
+									fileConent = "";
+								}
+							}
+							catch { }
+
+							bothCount = 0;
+							onCount = 0;
+							offCount = 0;
+
+							frameCount++;
+							// Stop adding frames to video if max frames has been reached
+							if (frameCount >= maxFrames)
+							{
+								break;
+							}
+							lastTime = timeStamp;
+						}
+					}
+				}
+				bytesRead = aedatFile.Read(bytes, 0, bytes.Length);
+			}
+
+			// Append any remaining data
+			await FileIO.AppendTextAsync(file, fileConent);
 		}
 
 		private (int, int) ParseVideoSettings()
