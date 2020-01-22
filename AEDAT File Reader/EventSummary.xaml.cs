@@ -211,7 +211,7 @@ namespace AEDAT_File_Reader
 			{
 				for (int i = 0, length = bytesRead; i < length; i += AedatUtilities.dataEntrySize)    // iterate through file, 8 bytes at a time.
 				{
-                    AEDATEvent currentEvent = new AEDATEvent(bytes,i, cam);
+                    AEDATEvent currentEvent = new AEDATEvent(bytes, i, cam);
 
 					_ = currentEvent.onOff ? onCount++ : offCount++;
 					bothCount++;

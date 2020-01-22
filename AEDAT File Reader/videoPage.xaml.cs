@@ -116,11 +116,13 @@ namespace AEDAT_File_Reader
 			StorageFile file = await picker.PickSingleFileAsync();
 			if (file == null) return;
 
-			byte[] aedatFile = await AedatUtilities.ReadToBytes(file);
+			var headerData = await AedatUtilities.GetHeaderData(file);
 
-			// Determine camera type from AEDAT header
-			string cameraTypeSearch = AedatUtilities.FindLineInHeader(AedatUtilities.hardwareInterfaceCheck, ref aedatFile);
-			CameraParameters cam = AedatUtilities.ParseCameraModel(cameraTypeSearch);
+			var aedatFile = (await file.OpenReadAsync()).AsStreamForRead();
+			aedatFile.Seek(headerData.Item1, SeekOrigin.Begin);     // Skip over header.
+
+			CameraParameters cam = headerData.Item2;
+
 			if (cam == null)
 			{
 				await invalidCameraDataDialog.ShowAsync();
@@ -146,38 +148,97 @@ namespace AEDAT_File_Reader
 		{
 			// Initilize writeable bitmap
 			WriteableBitmap bitmap = new WriteableBitmap(cam.cameraX, cam.cameraY); // init image with camera size
-			InMemoryRandomAccessStream inMemoryRandomAccessStream = new InMemoryRandomAccessStream();
+			// InMemoryRandomAccessStream inMemoryRandomAccessStream = new InMemoryRandomAccessStream();
 			Stream pixelStream = bitmap.PixelBuffer.AsStream();
 			return pixelStream;
 		}
 
-		public async Task<MediaComposition> TimeBasedReconstruction(byte[] aedatFile, CameraParameters cam, EventColor onColor, EventColor offColor, int frameTime, int maxFrames, float playback_frametime)
+		public async Task<MediaComposition> TimeBasedReconstruction(Stream aedatFile, CameraParameters cam, EventColor onColor, EventColor offColor, int frameTime, int maxFrames, float playback_frametime)
 		{
-			
+			byte[] aedatBytes = new byte[5 * Convert.ToInt32(Math.Pow(10, 8))]; // Read 0.5 GB at a time
 			MediaComposition composition = new MediaComposition();
 			int lastTime = -999999;
 			int timeStamp;
 			int frameCount = 0;
 			Stream pixelStream = InitBitMap(cam);
 			byte[] currentFrame = new byte[pixelStream.Length];
-			int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref aedatFile);   // find end of aedat header
 
-			// Read through AEDAT file
-			for (int i = endOfHeaderIndex, length = aedatFile.Length; i < length; i += AedatUtilities.dataEntrySize)    // iterate through file, 8 bytes at a time.
+			int bytesRead = aedatFile.Read(aedatBytes, 0, aedatBytes.Length);
+			while (bytesRead != 0 && frameCount < maxFrames)
 			{
-                AEDATEvent currentEvent = new AEDATEvent(aedatFile, i, cam);
-
-                AedatUtilities.SetPixel(ref currentFrame, currentEvent.x, currentEvent.y, (currentEvent.onOff ? onColor.Color : offColor.Color), cam.cameraX);
-                timeStamp = currentEvent.time;
-
-                if (lastTime == -999999)
+				// Read through AEDAT file
+				for (int i = 0, length = bytesRead; i < length; i += AedatUtilities.dataEntrySize)    // iterate through file, 8 bytes at a time.
 				{
-					lastTime = timeStamp;
-				}
-				else
-				{
-					if (lastTime + frameTime <= timeStamp) // Collected events within specified timeframe, add frame to video
+					AEDATEvent currentEvent = new AEDATEvent(aedatBytes, i, cam);
+
+					AedatUtilities.SetPixel(ref currentFrame, currentEvent.x, currentEvent.y, (currentEvent.onOff ? onColor.Color : offColor.Color), cam.cameraX);
+					timeStamp = currentEvent.time;
+
+					if (lastTime == -999999)
 					{
+						lastTime = timeStamp;
+					}
+					else
+					{
+						if (lastTime + frameTime <= timeStamp) // Collected events within specified timeframe, add frame to video
+						{
+							WriteableBitmap b = new WriteableBitmap(cam.cameraX, cam.cameraY);
+							using (Stream stream = b.PixelBuffer.AsStream())
+							{
+								await stream.WriteAsync(currentFrame, 0, currentFrame.Length);
+							}
+
+							SoftwareBitmap outputBitmap = SoftwareBitmap.CreateCopyFromBuffer(b.PixelBuffer, BitmapPixelFormat.Bgra8, b.PixelWidth, b.PixelHeight, BitmapAlphaMode.Ignore);
+							CanvasBitmap bitmap2 = CanvasBitmap.CreateFromSoftwareBitmap(CanvasDevice.GetSharedDevice(), outputBitmap);
+
+							// Set playback framerate
+							MediaClip mediaClip = MediaClip.CreateFromSurface(bitmap2, TimeSpan.FromSeconds(playback_frametime));
+
+							composition.Clips.Add(mediaClip);
+							frameCount++;
+
+							// Stop adding frames to video if max frames has been reached
+							if (frameCount >= maxFrames)
+							{
+								break;
+							}
+							currentFrame = new byte[pixelStream.Length];
+							lastTime = timeStamp;
+						}
+					}
+
+				}
+				bytesRead = aedatFile.Read(aedatBytes, 0, aedatBytes.Length);
+			}
+
+			return composition;
+
+		}
+
+		public async Task<MediaComposition> EventBasedReconstruction(Stream aedatFile, CameraParameters cam, EventColor onColor, EventColor offColor, int eventsPerFrame, int maxFrames, float playback_frametime)
+		{
+			byte[] aedatBytes = new byte[5 * Convert.ToInt32(Math.Pow(10, 8))]; // Read 0.5 GB at a time
+			MediaComposition composition = new MediaComposition();
+			int frameCount = 0;
+			int eventCount = 0;
+			Stream pixelStream = InitBitMap(cam);
+			byte[] currentFrame = new byte[pixelStream.Length];
+
+			int bytesRead = aedatFile.Read(aedatBytes, 0, aedatBytes.Length);
+
+			while (bytesRead != 0 && frameCount < maxFrames)
+			{
+				// Read through AEDAT file
+				for (int i = 0, length = bytesRead; i < length; i += AedatUtilities.dataEntrySize)    // iterate through file, 8 bytes at a time.
+				{
+					AEDATEvent currentEvent = new AEDATEvent(aedatBytes, i, cam);
+
+					AedatUtilities.SetPixel(ref currentFrame, currentEvent.x, currentEvent.y, (currentEvent.onOff ? onColor.Color : offColor.Color), cam.cameraX);
+
+					eventCount++;
+					if (eventCount >= eventsPerFrame) // Collected events within specified timeframe, add frame to video
+					{
+						eventCount = 0;
 						WriteableBitmap b = new WriteableBitmap(cam.cameraX, cam.cameraY);
 						using (Stream stream = b.PixelBuffer.AsStream())
 						{
@@ -189,69 +250,20 @@ namespace AEDAT_File_Reader
 
 						// Set playback framerate
 						MediaClip mediaClip = MediaClip.CreateFromSurface(bitmap2, TimeSpan.FromSeconds(playback_frametime));
-
 						composition.Clips.Add(mediaClip);
-						frameCount++;
 
+						frameCount++;
 						// Stop adding frames to video if max frames has been reached
 						if (frameCount >= maxFrames)
 						{
-							break;
+							return composition;
 						}
 						currentFrame = new byte[pixelStream.Length];
-						lastTime = timeStamp;
 					}
+
+
 				}
-
-			}
-
-			return composition;
-
-		}
-
-		public async Task<MediaComposition> EventBasedReconstruction(byte[] aedatFile, CameraParameters cam, EventColor onColor, EventColor offColor, int eventsPerFrame, int maxFrames, float playback_frametime)
-		{
-			MediaComposition composition = new MediaComposition();
-			int frameCount = 0;
-			int eventCount = 0;
-			Stream pixelStream = InitBitMap(cam);
-			byte[] currentFrame = new byte[pixelStream.Length];
-			int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref aedatFile);   // find end of aedat header
-
-			// Read through AEDAT file
-			for (int i = endOfHeaderIndex, length = aedatFile.Length; i < length; i += AedatUtilities.dataEntrySize)    // iterate through file, 8 bytes at a time.
-			{
-                AEDATEvent currentEvent = new AEDATEvent(aedatFile, i, cam);
-
-                AedatUtilities.SetPixel(ref currentFrame, currentEvent.x, currentEvent.y, (currentEvent.onOff ? onColor.Color : offColor.Color), cam.cameraX);
-
-                eventCount++;
-				if (eventCount >= eventsPerFrame) // Collected events within specified timeframe, add frame to video
-				{
-					eventCount = 0;
-					WriteableBitmap b = new WriteableBitmap(cam.cameraX, cam.cameraY);
-					using (Stream stream = b.PixelBuffer.AsStream())
-					{
-						await stream.WriteAsync(currentFrame, 0, currentFrame.Length);
-					}
-
-					SoftwareBitmap outputBitmap = SoftwareBitmap.CreateCopyFromBuffer(b.PixelBuffer, BitmapPixelFormat.Bgra8, b.PixelWidth, b.PixelHeight, BitmapAlphaMode.Ignore);
-					CanvasBitmap bitmap2 = CanvasBitmap.CreateFromSoftwareBitmap(CanvasDevice.GetSharedDevice(), outputBitmap);
-
-					// Set playback framerate
-					MediaClip mediaClip = MediaClip.CreateFromSurface(bitmap2, TimeSpan.FromSeconds(playback_frametime));
-					composition.Clips.Add(mediaClip);
-					
-					frameCount++;
-					// Stop adding frames to video if max frames has been reached
-					if (frameCount >= maxFrames)
-					{
-						return composition;
-					}
-					currentFrame = new byte[pixelStream.Length];
-				}
-				
-
+				bytesRead = aedatFile.Read(aedatBytes, 0, aedatBytes.Length);
 			}
 
 			return composition;
