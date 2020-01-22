@@ -150,7 +150,10 @@ namespace AEDAT_File_Reader
             dataGrid.ItemsSource = tableData;
         }
 
-
+        /// <summary>
+        /// Gets the first timestamp and the last timestamp
+        /// </summary>
+        /// <param name="file"></param>
         private async void getData(StorageFile file)
         {
 
@@ -171,7 +174,7 @@ namespace AEDAT_File_Reader
 
 			int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref result);
 
-			foreach (byte byteIn in result.Skip(endOfHeaderIndex))
+			foreach (byte byteIn in result.Skip(endOfHeaderIndex))//get the first timestamp;
 			{
 				if (dataEntryQ.Count < AedatUtilities.dataEntrySize)
 					dataEntryQ.Enqueue(byteIn);

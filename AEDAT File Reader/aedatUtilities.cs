@@ -251,21 +251,18 @@ namespace AEDAT_File_Reader
 			return word;
 		}
 
-		public static async Task<List<Event>> GetEvents(StorageFile file)
+		public static async Task<List<AEDATEvent>> GetEvents(StorageFile file)
 		{
 
 			byte[] result = await ReadToBytes(file);    // All of the bytes in the AEDAT file loaded into an array
 
-			List<Event> tableData = new List<Event>();
-			const int dataEntrySize = 8;                // Number of elements in the data entry
-
-			byte[] currentDataEntry = new byte[dataEntrySize];
+			List<AEDATEvent> tableData = new List<AEDATEvent>();
 
 			// Determine camera type
 			string cameraTypeSearch = FindLineInHeader(hardwareInterfaceCheck, ref result);
 			CameraParameters cam = ParseCameraModel(cameraTypeSearch);
 
-			if (cam is null)
+			if (cam == null)
 			{
 				ContentDialog invalidData = new ContentDialog()
 				{
@@ -280,17 +277,9 @@ namespace AEDAT_File_Reader
 
 			int endOfHeaderIndex = GetEndOfHeaderIndex(ref result);
 
-            int timeStamp;
 			for (int i = endOfHeaderIndex; i < result.Count() - 1; i += 8)
             {
-                for (int j = 0; j < 8; j++)
-                {
-                    currentDataEntry[j] = result[i + (7 - j)];
-				}
-				timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes
-
-                int[] XY = cam.getXY(currentDataEntry, cam.cameraY, cam.cameraX);
-				tableData.Add(new Event { time = timeStamp, onOff = cam.getEventType(currentDataEntry), x = XY[0], y = XY[1] });
+				tableData.Add(new AEDATEvent (result,i,cam));
             }
 
 			return tableData;

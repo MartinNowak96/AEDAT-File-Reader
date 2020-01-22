@@ -1,4 +1,5 @@
-﻿using Microsoft.Graphics.Canvas;
+﻿using AEDAT_File_Reader.Models;
+using Microsoft.Graphics.Canvas;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -176,19 +177,14 @@ namespace AEDAT_File_Reader
             Stream pixelStream = InitBitMap(cam);
             byte[] currentFrame = new byte[pixelStream.Length];
             int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref aedatFile);   // find end of aedat header
-            byte[] currentDataEntry = new byte[AedatUtilities.dataEntrySize];
 
             // Read through AEDAT file
             for (int i = endOfHeaderIndex, length = aedatFile.Length; i < length; i += AedatUtilities.dataEntrySize)    // iterate through file, 8 bytes at a time.
             {
-                for (int j = 0; j < 8; j++)    // from i get the next 8 bytes
-                {
-                    currentDataEntry[j] = aedatFile[i + (7 - j)];
-                }
-                timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes, uS
-
-                int[] XY = cam.getXY(currentDataEntry, cam.cameraY, cam.cameraX);
-                AedatUtilities.SetPixel(ref currentFrame, XY[0], XY[1], (cam.getEventType(currentDataEntry) ? onColor.Color : offColor.Color), cam.cameraX);
+                AEDATEvent currentEvent = new AEDATEvent(aedatFile, i, cam);
+            
+                timeStamp = currentEvent.time;
+                AedatUtilities.SetPixel(ref currentFrame, currentEvent.x, currentEvent.y, (currentEvent.onOff ? onColor.Color : offColor.Color), cam.cameraX);
 
 
                 if (lastTime == -999999)
@@ -247,17 +243,13 @@ namespace AEDAT_File_Reader
             Stream pixelStream = InitBitMap(cam);
             byte[] currentFrame = new byte[pixelStream.Length];
             int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref aedatFile);   // find end of aedat header
-            byte[] currentDataEntry = new byte[AedatUtilities.dataEntrySize];
 
             // Read through AEDAT file
             for (int i = endOfHeaderIndex, length = aedatFile.Length; i < length; i += AedatUtilities.dataEntrySize)    // iterate through file, 8 bytes at a time.
             {
-                for (int j = 0; j < 8; j++)    // from i get the next 8 bytes
-                {
-                    currentDataEntry[j] = aedatFile[i + (7 - j)];
-                }
-                int[] XY = cam.getXY(currentDataEntry, cam.cameraY, cam.cameraX);
-                AedatUtilities.SetPixel(ref currentFrame, XY[0], XY[1], (cam.getEventType(currentDataEntry) ? onColor.Color : offColor.Color), cam.cameraX);
+                AEDATEvent currentEvent = new AEDATEvent(aedatFile, i, cam);
+
+                AedatUtilities.SetPixel(ref currentFrame, currentEvent.x, currentEvent.y, (currentEvent.onOff ? onColor.Color : offColor.Color), cam.cameraX);
 
                 eventCount++;
                 if (eventCount >= eventsPerFrame) // Collected events within specified timeframe, add frame to video

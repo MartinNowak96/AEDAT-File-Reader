@@ -35,16 +35,16 @@ namespace AEDAT_File_Reader
 			CloseButtonText = "Close"
 		};
 
-		ObservableCollection<Event> tableData;
+		ObservableCollection<AEDATEvent> tableData;
 		public eventList()
 		{
 			tableData = EventManager.GetEvent();
 			this.InitializeComponent();
 		}
 
-		private async Task<List<Event>> UpdateDataGrid(StorageFile file)
+		private async Task<List<AEDATEvent>> UpdateDataGrid(StorageFile file)
 		{
-			List<Event> temp = await AedatUtilities.GetEvents(file);
+			List<AEDATEvent> temp = await AedatUtilities.GetEvents(file);
 
 			// Get camera type
 			byte[] headerBytes = await AedatUtilities.ReadHeaderToBytes(file);
@@ -67,7 +67,7 @@ namespace AEDAT_File_Reader
 
 			if (file != null)
 			{
-				List<Event> events =await UpdateDataGrid(file);
+				List<AEDATEvent> events =await UpdateDataGrid(file);
 				dataGrid.ItemsSource = events;
 			}
 		}
@@ -117,7 +117,7 @@ namespace AEDAT_File_Reader
 			savePicker.SuggestedFileName = "New Document";
 
 			StorageFile newCSV = await savePicker.PickSaveFileAsync();
-			List<Event> tempEvents = (List<Event>)dataGrid.ItemsSource;
+			List<AEDATEvent> tempEvents = (List<AEDATEvent>)dataGrid.ItemsSource;
 			await SaveAsCSV(tempEvents,newCSV, cordCol.IsOn, onOffCol.IsOn, pixelNumber.IsOn);
 
 			await singleExportComplete.ShowAsync();
@@ -164,7 +164,7 @@ namespace AEDAT_File_Reader
 					newCSV = await saveFolder.CreateFileAsync(saveName);
 				}
 
-				List<Event> tempEvents = await UpdateDataGrid(file);
+				List<AEDATEvent> tempEvents = await UpdateDataGrid(file);
 				// Create CSV
 				await SaveAsCSV(tempEvents, newCSV, cordCol.IsOn, onOffCol.IsOn, pixelNumber.IsOn);
 			}
@@ -173,7 +173,7 @@ namespace AEDAT_File_Reader
 
 		}
 
-		private async Task SaveAsCSV(List<Event> data,StorageFile saveFile, bool includeCords, bool onOffType, bool pixelNumber)
+		private async Task SaveAsCSV(List<AEDATEvent> data,StorageFile saveFile, bool includeCords, bool onOffType, bool pixelNumber)
         {
             if (saveFile == null) return;
 
@@ -216,7 +216,7 @@ namespace AEDAT_File_Reader
                             formatOnOff = b => b == true ? "1," : "-1,";
 
                         // Write to the CSV file
-                        foreach (Event item in data)
+                        foreach (AEDATEvent item in data)
                         {
                             dataWriter.WriteString(formatOnOff(item.onOff) + formatCoords(item.x, item.y) + item.time + "\n");
                         }

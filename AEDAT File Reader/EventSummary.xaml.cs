@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AEDAT_File_Reader.Models;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -148,7 +149,6 @@ namespace AEDAT_File_Reader
 			int frameCount = 0;
 			int writeBufferSize = 50000;			// Maximum number of characters to collect before writing to disk
 
-			byte[] currentDataEntry = new byte[AedatUtilities.dataEntrySize];
 
 			// Create CSV file
 			StorageFile file = await folder.CreateFileAsync(fileName + ".csv", CreationCollisionOption.GenerateUniqueName);
@@ -165,16 +165,11 @@ namespace AEDAT_File_Reader
 			{
 				for (int i = 0, length = bytesRead; i < length; i += AedatUtilities.dataEntrySize)    // iterate through file, 8 bytes at a time.
 				{
-					for (int j = 0; j < 8; j++)    // from i get the next 8 bytes
-					{
-						currentDataEntry[j] = bytes[i + (7 - j)];
-					}
-					timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes, uS
+                    AEDATEvent currentEvent = new AEDATEvent(bytes,i, cam);
 
-					bool eventType = cam.getEventType(currentDataEntry);
-					_ = eventType == true ? onCount++ : offCount++;
+					_ = currentEvent.onOff ? onCount++ : offCount++;
 					bothCount++;
-
+                    timeStamp = currentEvent.time;
 					if (lastTime == -999999)
 					{
 						lastTime = timeStamp;
@@ -225,7 +220,6 @@ namespace AEDAT_File_Reader
 			int frameCount = 0;
 			int writeBufferSize = 50000;            // Maximum number of characters to collect before writing to disk
 
-			byte[] currentDataEntry = new byte[AedatUtilities.dataEntrySize];
 
 			// Create CSV file
 			StorageFile file = await folder.CreateFileAsync(fileName + ".csv", CreationCollisionOption.GenerateUniqueName);
@@ -242,14 +236,10 @@ namespace AEDAT_File_Reader
 			{
 				for (int i = 0, length = bytesRead; i < length; i += AedatUtilities.dataEntrySize)    // iterate through file, 8 bytes at a time.
 				{
-					for (int j = 0; j < 8; j++)    // from i get the next 8 bytes
-					{
-						currentDataEntry[j] = bytes[i + (7 - j)];
-					}
-					timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes, uS
+                    AEDATEvent currentEvent = new AEDATEvent(bytes, i, cam);
 
-					bool eventType = cam.getEventType(currentDataEntry);
-					_ = eventType == true ? onCount++ : offCount++;
+                    _ = currentEvent.onOff ? onCount++ : offCount++;
+                    timeStamp = currentEvent.time;
 					bothCount++;
 					
 					if (lastTime == -999999)

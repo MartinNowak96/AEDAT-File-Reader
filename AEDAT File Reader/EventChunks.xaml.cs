@@ -1,4 +1,5 @@
-﻿using Microsoft.Graphics.Canvas;
+﻿using AEDAT_File_Reader.Models;
+using Microsoft.Graphics.Canvas;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -162,22 +163,16 @@ namespace AEDAT_File_Reader
 			int frameCount = 0;
 
 			int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref aedatFile);   // find end of aedat header
-			byte[] currentDataEntry = new byte[AedatUtilities.dataEntrySize];
-
 			
 			string fileConent = "";
 			// Read through AEDAT file
 			for (int i = endOfHeaderIndex, length = aedatFile.Length; i < length; i += AedatUtilities.dataEntrySize)    // iterate through file, 8 bytes at a time.
 			{
-				for (int j = 0; j < 8; j++)    // from i get the next 8 bytes
-				{
-					currentDataEntry[j] = aedatFile[i + (7 - j)];
-				}
-				timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes, uS
+                AEDATEvent currentEvent = new AEDATEvent(aedatFile, i, cam);
 
-				int[] XY = cam.getXY(currentDataEntry, cam.cameraY, cam.cameraX);
-				bool eventType = cam.getEventType(currentDataEntry);
-				fileConent += eventType + "," + XY[0]+ "," + XY[1] + "," + timeStamp + "\n";
+                fileConent += currentEvent.onOff + "," + currentEvent.x+ "," + currentEvent.y + "," + currentEvent.time + "\n";
+                timeStamp = currentEvent.time;
+
 
 				if (lastTime == -999999)
 				{
@@ -190,7 +185,7 @@ namespace AEDAT_File_Reader
 						try
 						{
 							StorageFile file = await folder.CreateFileAsync(fileName + frameCount + ".csv", CreationCollisionOption.GenerateUniqueName);
-							await Windows.Storage.FileIO.WriteTextAsync(file, "On/Off,X,Y,Timestamp\n" + fileConent);
+							await FileIO.WriteTextAsync(file, "On/Off,X,Y,Timestamp\n" + fileConent);
 						} catch { }
 						
 						
@@ -214,26 +209,20 @@ namespace AEDAT_File_Reader
 			int frameCount = 0;
 			int eventCount = 0;
 			int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref aedatFile);   // find end of aedat header
-			byte[] currentDataEntry = new byte[AedatUtilities.dataEntrySize];
 
 			string fileConent = "";
 			// Read through AEDAT file
 			for (int i = endOfHeaderIndex, length = aedatFile.Length; i < length; i += AedatUtilities.dataEntrySize)    // iterate through file, 8 bytes at a time.
 			{
-				for (int j = 0; j < 8; j++)    // from i get the next 8 bytes
-				{
-					currentDataEntry[j] = aedatFile[i + (7 - j)];
-				}
-				int timeStamp = BitConverter.ToInt32(currentDataEntry, 0);      // Timestamp is found in the first four bytes, uS
-				int[] XY = cam.getXY(currentDataEntry, cam.cameraY, cam.cameraX);
-				bool eventType = cam.getEventType(currentDataEntry);
-				fileConent += eventType + "," + XY[0] + "," + XY[1] + "," + timeStamp;
-				eventCount++;
+                AEDATEvent currentEvent = new AEDATEvent(aedatFile, i, cam);
+
+                fileConent += currentEvent.onOff + "," + currentEvent.x + "," + currentEvent.y + "," + currentEvent.time + "\n";
+                eventCount++;
 				if (eventCount >= eventsPerFrame) // Collected events within specified timeframe, add frame to video
 				{
 					eventCount = 0;
 					StorageFile file = await folder.CreateFileAsync(fileName + frameCount + ".csv", CreationCollisionOption.GenerateUniqueName);
-					await Windows.Storage.FileIO.WriteTextAsync(file, "On/Off,X,Y,Timestamp\n" + fileConent);
+					await FileIO.WriteTextAsync(file, "On/Off,X,Y,Timestamp\n" + fileConent);
 
 					fileConent = "";
 					frameCount++;
