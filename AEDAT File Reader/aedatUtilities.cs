@@ -253,14 +253,16 @@ namespace AEDAT_File_Reader
 
 		public static async Task<List<AEDATEvent>> GetEvents(StorageFile file)
 		{
+			var headerData = await AedatUtilities.GetHeaderData(file);
+			int endOfHeaderIndex = headerData.Item1;
+			CameraParameters cam = headerData.Item2;
 
-			byte[] result = await ReadToBytes(file);    // All of the bytes in the AEDAT file loaded into an array
+			byte[] aedatBytes = new byte[5 * Convert.ToInt32(Math.Pow(10, 8))]; // Read 0.5 GB at a time
+
+			var aedatFile = (await file.OpenReadAsync()).AsStreamForRead();
+			aedatFile.Seek(endOfHeaderIndex, SeekOrigin.Begin);     // Skip over header.
 
 			List<AEDATEvent> tableData = new List<AEDATEvent>();
-
-			// Determine camera type
-			string cameraTypeSearch = FindLineInHeader(hardwareInterfaceCheck, ref result);
-			CameraParameters cam = ParseCameraModel(cameraTypeSearch);
 
 			if (cam == null)
 			{
@@ -275,12 +277,15 @@ namespace AEDAT_File_Reader
 				return null;
 			}
 
-			int endOfHeaderIndex = GetEndOfHeaderIndex(ref result);
-
-			for (int i = endOfHeaderIndex; i < result.Count() - 1; i += 8)
-            {
-				tableData.Add(new AEDATEvent (result,i,cam));
-            }
+			int bytesRead = aedatFile.Read(aedatBytes, 0, aedatBytes.Length);
+			while (bytesRead != 0)
+			{
+				for (int i = 0, length = bytesRead; i < length; i += AedatUtilities.dataEntrySize)
+				{
+					tableData.Add(new AEDATEvent(aedatBytes, i, cam));
+				}
+				bytesRead = aedatFile.Read(aedatBytes, 0, aedatBytes.Length);
+			}
 
 			return tableData;
 

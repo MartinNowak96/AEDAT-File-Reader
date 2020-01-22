@@ -112,9 +112,6 @@ namespace AEDAT_File_Reader
 			};
 			picker2.FileTypeFilter.Add("*");
 
-
-
-
 			// Select AEDAT file to be converted
 			StorageFolder folder = await picker2.PickSingleFolderAsync();
 			if (folder == null)
@@ -124,15 +121,14 @@ namespace AEDAT_File_Reader
 				return;
 			}
 
-
 			foreach (var file in files)
 			{
+				var headerData = await AedatUtilities.GetHeaderData(file);
 
-				byte[] aedatFile = await AedatUtilities.ReadToBytes(file);
+				var aedatFile = (await file.OpenReadAsync()).AsStreamForRead();
+				aedatFile.Seek(headerData.Item1, SeekOrigin.Begin); //Skip over header.
 
-				// Determine camera type from AEDAT header
-				string cameraTypeSearch = AedatUtilities.FindLineInHeader(AedatUtilities.hardwareInterfaceCheck, ref aedatFile);
-				CameraParameters cam = AedatUtilities.ParseCameraModel(cameraTypeSearch);
+				CameraParameters cam = headerData.Item2;
 				if (cam == null)
 				{
 					await invalidCameraDataDialog.ShowAsync();
@@ -168,127 +164,138 @@ namespace AEDAT_File_Reader
             return pixelStream;
         }
 
-        public async Task TimeBasedReconstruction(byte[] aedatFile, CameraParameters cam, EventColor onColor, EventColor offColor, int frameTime, int maxFrames, StorageFolder folder,string fileName)
+        public async Task TimeBasedReconstruction(Stream aedatFile, CameraParameters cam, EventColor onColor, EventColor offColor, int frameTime, int maxFrames, StorageFolder folder,string fileName)
         {
-
-            int lastTime = -999999;
+			byte[] aedatBytes = new byte[5 * Convert.ToInt32(Math.Pow(10, 8))]; // Read 0.5 GB at a time
+			int lastTime = -999999;
             int timeStamp;
             int frameCount = 0;
             Stream pixelStream = InitBitMap(cam);
             byte[] currentFrame = new byte[pixelStream.Length];
-            int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref aedatFile);   // find end of aedat header
 
-            // Read through AEDAT file
-            for (int i = endOfHeaderIndex, length = aedatFile.Length; i < length; i += AedatUtilities.dataEntrySize)    // iterate through file, 8 bytes at a time.
-            {
-                AEDATEvent currentEvent = new AEDATEvent(aedatFile, i, cam);
-            
-                timeStamp = currentEvent.time;
-                AedatUtilities.SetPixel(ref currentFrame, currentEvent.x, currentEvent.y, (currentEvent.onOff ? onColor.Color : offColor.Color), cam.cameraX);
+			int bytesRead = aedatFile.Read(aedatBytes, 0, aedatBytes.Length);
+
+			while (bytesRead != 0 && frameCount < maxFrames)
+			{
+				// Read through AEDAT file
+				for (int i = 0, length = bytesRead; i < length; i += AedatUtilities.dataEntrySize)    // iterate through file, 8 bytes at a time.
+				{
+					AEDATEvent currentEvent = new AEDATEvent(aedatBytes, i, cam);
+
+					timeStamp = currentEvent.time;
+					AedatUtilities.SetPixel(ref currentFrame, currentEvent.x, currentEvent.y, (currentEvent.onOff ? onColor.Color : offColor.Color), cam.cameraX);
 
 
-                if (lastTime == -999999)
-                {
-                    lastTime = timeStamp;
-                }
-                else
-                {
-                    if (lastTime + frameTime <= timeStamp) // Collected events within specified timeframe, add frame to video
-                    {
-                        WriteableBitmap b = new WriteableBitmap(cam.cameraX, cam.cameraY);
-                        using (Stream stream = b.PixelBuffer.AsStream())
-                        {
-                            await stream.WriteAsync(currentFrame, 0, currentFrame.Length);
-                        }
-                        try
-                        {
-                            var file = await folder.CreateFileAsync(fileName +frameCount+".png",CreationCollisionOption.GenerateUniqueName);
-                            using (IRandomAccessStream stream = await file.OpenAsync(FileAccessMode.ReadWrite))
-                            {
-                                BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
-                                Stream pixelStream2 = b.PixelBuffer.AsStream();
-                                byte[] pixels = new byte[pixelStream2.Length];
-                                await pixelStream2.ReadAsync(pixels, 0, pixels.Length);
+					if (lastTime == -999999)
+					{
+						lastTime = timeStamp;
+					}
+					else
+					{
+						if (lastTime + frameTime <= timeStamp) // Collected events within specified timeframe, add frame to video
+						{
+							WriteableBitmap b = new WriteableBitmap(cam.cameraX, cam.cameraY);
+							using (Stream stream = b.PixelBuffer.AsStream())
+							{
+								await stream.WriteAsync(currentFrame, 0, currentFrame.Length);
+							}
+							try
+							{
+								var file = await folder.CreateFileAsync(fileName + frameCount + ".png", CreationCollisionOption.GenerateUniqueName);
+								using (IRandomAccessStream stream = await file.OpenAsync(FileAccessMode.ReadWrite))
+								{
+									BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
+									Stream pixelStream2 = b.PixelBuffer.AsStream();
+									byte[] pixels = new byte[pixelStream2.Length];
+									await pixelStream2.ReadAsync(pixels, 0, pixels.Length);
 
-                                encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Ignore,
-                                                    (uint)b.PixelWidth,
-                                                    (uint)b.PixelHeight,
-                                                    96.0,
-                                                    96.0,
-                                                    pixels);
-                                await encoder.FlushAsync();
-                            }
-                        }
-                        catch { }
-                        
-                        frameCount++;
-                        // Stop adding frames to video if max frames has been reached
-                        if (frameCount >= maxFrames)
-                        {
-                            break;
-                        }
-                        currentFrame = new byte[pixelStream.Length];
-                        lastTime = timeStamp;
-                    }
-                }
+									encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Ignore,
+														(uint)b.PixelWidth,
+														(uint)b.PixelHeight,
+														96.0,
+														96.0,
+														pixels);
+									await encoder.FlushAsync();
+								}
+							}
+							catch { }
 
-            }
+							frameCount++;
+							// Stop adding frames to video if max frames has been reached
+							if (frameCount >= maxFrames)
+							{
+								break;
+							}
+							currentFrame = new byte[pixelStream.Length];
+							lastTime = timeStamp;
+						}
+					}
+
+				}
+				bytesRead = aedatFile.Read(aedatBytes, 0, aedatBytes.Length);
+			}
 
         }
 
-        public async Task EventBasedReconstruction(byte[] aedatFile, CameraParameters cam, EventColor onColor, EventColor offColor, int eventsPerFrame, int maxFrames, StorageFolder folder, string fileName)
+        public async Task EventBasedReconstruction(Stream aedatFile, CameraParameters cam, EventColor onColor, EventColor offColor, int eventsPerFrame, int maxFrames, StorageFolder folder, string fileName)
         {
-            int frameCount = 0;
+			byte[] aedatBytes = new byte[5 * Convert.ToInt32(Math.Pow(10, 8))]; // Read 0.5 GB at a time
+			int frameCount = 0;
             int eventCount = 0;
             Stream pixelStream = InitBitMap(cam);
             byte[] currentFrame = new byte[pixelStream.Length];
-            int endOfHeaderIndex = AedatUtilities.GetEndOfHeaderIndex(ref aedatFile);   // find end of aedat header
 
-            // Read through AEDAT file
-            for (int i = endOfHeaderIndex, length = aedatFile.Length; i < length; i += AedatUtilities.dataEntrySize)    // iterate through file, 8 bytes at a time.
-            {
-                AEDATEvent currentEvent = new AEDATEvent(aedatFile, i, cam);
+			int bytesRead = aedatFile.Read(aedatBytes, 0, aedatBytes.Length);
 
-                AedatUtilities.SetPixel(ref currentFrame, currentEvent.x, currentEvent.y, (currentEvent.onOff ? onColor.Color : offColor.Color), cam.cameraX);
+			while (bytesRead != 0 && frameCount < maxFrames)
+			{
+				// Read through AEDAT file
+				for (int i = 0, length = bytesRead; i < length; i += AedatUtilities.dataEntrySize)    // iterate through file, 8 bytes at a time.
+				{
+					AEDATEvent currentEvent = new AEDATEvent(aedatBytes, i, cam);
 
-                eventCount++;
-                if (eventCount >= eventsPerFrame) // Collected events within specified timeframe, add frame to video
-                {
-                    eventCount = 0;
-                    WriteableBitmap b = new WriteableBitmap(cam.cameraX, cam.cameraY);
-                    using (Stream stream = b.PixelBuffer.AsStream())
-                    {
-                        await stream.WriteAsync(currentFrame, 0, currentFrame.Length);
-                    }
-                    var file = await folder.CreateFileAsync(fileName + frameCount + ".png");
-                    using (IRandomAccessStream stream = await file.OpenAsync(FileAccessMode.ReadWrite))
-                    {
-                        BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
-                        Stream pixelStream2 = b.PixelBuffer.AsStream();
-                        byte[] pixels = new byte[pixelStream2.Length];
-                        await pixelStream2.ReadAsync(pixels, 0, pixels.Length);
+					AedatUtilities.SetPixel(ref currentFrame, currentEvent.x, currentEvent.y, (currentEvent.onOff ? onColor.Color : offColor.Color), cam.cameraX);
 
-                        encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Ignore,
-                                            (uint)b.PixelWidth,
-                                            (uint)b.PixelHeight,
-                                            96.0,
-                                            96.0,
-                                            pixels);
-                        await encoder.FlushAsync();
-                    }
+					eventCount++;
+					if (eventCount >= eventsPerFrame) // Collected events within specified timeframe, add frame to video
+					{
+						eventCount = 0;
+						WriteableBitmap b = new WriteableBitmap(cam.cameraX, cam.cameraY);
+						using (Stream stream = b.PixelBuffer.AsStream())
+						{
+							await stream.WriteAsync(currentFrame, 0, currentFrame.Length);
+						}
+						var file = await folder.CreateFileAsync(fileName + frameCount + ".png");
+						using (IRandomAccessStream stream = await file.OpenAsync(FileAccessMode.ReadWrite))
+						{
+							BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
+							Stream pixelStream2 = b.PixelBuffer.AsStream();
+							byte[] pixels = new byte[pixelStream2.Length];
+							await pixelStream2.ReadAsync(pixels, 0, pixels.Length);
 
-
-                    frameCount++;
-                    // Stop adding frames to video if max frames has been reached
-                    if (frameCount >= maxFrames)
-                    {
-                        return;
-                    }
-                    currentFrame = new byte[pixelStream.Length];
-                }
+							encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Ignore,
+												(uint)b.PixelWidth,
+												(uint)b.PixelHeight,
+												96.0,
+												96.0,
+												pixels);
+							await encoder.FlushAsync();
+						}
 
 
-            }
+						frameCount++;
+						// Stop adding frames to video if max frames has been reached
+						if (frameCount >= maxFrames)
+						{
+							return;
+						}
+						currentFrame = new byte[pixelStream.Length];
+					}
+
+
+				}
+				bytesRead = aedatFile.Read(aedatBytes, 0, aedatBytes.Length);
+			}
 
             return;
 
@@ -312,17 +319,9 @@ namespace AEDAT_File_Reader
                 frameTime = Int32.Parse(frameTimeTB.Text);
             }
 
-            if (allFrameCheckBox.IsChecked == true)
-            {
-                maxFrames = 2147483647;
-            }
-            else
-            {
-                maxFrames = Int32.Parse(maxFramesTB.Text);
-            }
+			maxFrames = allFrameCheckBox.IsChecked == true ? 2147483647 : Int32.Parse(maxFramesTB.Text);
 
-
-            if (maxFrames <= 0 || frameTime <= 0)
+			if (maxFrames <= 0 || frameTime <= 0)
             {
                 throw new FormatException();
             }
