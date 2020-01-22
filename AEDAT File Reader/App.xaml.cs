@@ -83,6 +83,18 @@ namespace AEDAT_File_Reader
             throw new Exception("Failed to load Page " + e.SourcePageType.FullName);
         }
 
+        protected override void OnFileActivated(FileActivatedEventArgs args)
+        {
+            var rootFrame = new Frame();
+ 
+            rootFrame.Navigate(typeof(MainPage), args);
+
+            Window.Current.Content = rootFrame;
+            Window.Current.Activate();
+            
+            
+        }
+
         /// <summary>
         /// Invoked when application execution is being suspended.  Application state is saved
         /// without knowing whether the application will be terminated or resumed with the contents

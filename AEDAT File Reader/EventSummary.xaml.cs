@@ -3,10 +3,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.Activation;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
+using Windows.UI.Xaml.Navigation;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -63,14 +65,13 @@ namespace AEDAT_File_Reader
 				return;
 			}
 
-			// Select AEDAT file to be converted to video
+			// Select AEDAT files to be converted to video
 			var picker = new FileOpenPicker
 			{
 				ViewMode = PickerViewMode.Thumbnail,
 				SuggestedStartLocation = PickerLocationId.PicturesLibrary
 			};
 			picker.FileTypeFilter.Add(".AEDAT");
-
 
 			// Select AEDAT file to be converted
 			IReadOnlyList<StorageFile> files = await picker.PickMultipleFilesAsync();
@@ -98,50 +99,95 @@ namespace AEDAT_File_Reader
 				return;
 			}
 
-
-			foreach (StorageFile file in files)
-			{
-				//byte[] aedatFile = await AedatUtilities.ReadToBytes(file);
-
-				var headerData = await AedatUtilities.GetHeaderData(file);
-				
-				var aedatFile  = (await file.OpenReadAsync()).AsStreamForRead();
-				// Newstuff
-				//FileStream aedatFile = new FileStream(file.Path, FileMode.Open, FileAccess.Read);
-				aedatFile.Seek(headerData.Item1, SeekOrigin.Begin);//skip over header.
-
-
-				// Determine camera type from AEDAT header
-				CameraParameters cam = headerData.Item2;
-				if (cam == null)
-				{
-					await invalidCameraDataDialog.ShowAsync();
-					return;
-				}
-				showLoading.IsActive = true;
-				backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Visible;
-
-
-				StorageFolder folder2 = await folder.CreateFolderAsync(file.Name.Replace(".aedat", "") + " Event Chunks");
-
-
-				if (playbackType.IsOn)
-				{
-					await TimeBasedReconstruction(aedatFile, cam, frameTime, maxFrames, folder2, file.Name.Replace(".aedat", ""));
-				}
-				else
-				{
-					int numOfEvents = Int32.Parse(numOfEventInput.Text);
-					await EventBasedReconstruction(aedatFile, cam, numOfEvents, maxFrames, folder2, file.Name.Replace(".aedat", ""));
-				}
-			}
-			showLoading.IsActive = false;
-			backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
+            List<StorageFile> fileList = new List<StorageFile>();
+            foreach(var file in files)
+            {
+                fileList.Add(file);
+            }
+            BulkExport(fileList, maxFrames, frameTime);
 		}
 
+        public async void BulkExport(List<StorageFile> files, int maxFrames,int frameTime)
+        {
+            
+            var picker2 = new FolderPicker
+            {
+                ViewMode = PickerViewMode.Thumbnail,
+                SuggestedStartLocation = PickerLocationId.PicturesLibrary
+            };
+            picker2.FileTypeFilter.Add("*");
+            // Select AEDAT file to be converted
+            StorageFolder folder = await picker2.PickSingleFolderAsync();
+            if (folder == null)
+            {
+                showLoading.IsActive = false;
+                backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
+                return;
+            }
 
 
-		public async Task TimeBasedReconstruction(Stream aedatFile, CameraParameters cam, int frameTime, int maxFrames, StorageFolder folder, string fileName)
+            foreach (StorageFile file in files)
+            {
+                //byte[] aedatFile = await AedatUtilities.ReadToBytes(file);
+
+                var headerData = await AedatUtilities.GetHeaderData(file);
+
+                var aedatFile = (await file.OpenReadAsync()).AsStreamForRead();
+                // Newstuff
+                //FileStream aedatFile = new FileStream(file.Path, FileMode.Open, FileAccess.Read);
+                aedatFile.Seek(headerData.Item1, SeekOrigin.Begin);//skip over header.
+
+
+                // Determine camera type from AEDAT header
+                CameraParameters cam = headerData.Item2;
+                if (cam == null)
+                {
+                    await invalidCameraDataDialog.ShowAsync();
+                    return;
+                }
+                showLoading.IsActive = true;
+                backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Visible;
+
+
+                StorageFolder folder2 = await folder.CreateFolderAsync(file.Name.Replace(".aedat", "") + " Event Chunks");
+
+
+                if (playbackType.IsOn)
+                {
+                    await TimeBasedReconstruction(aedatFile, cam, frameTime, maxFrames, folder2, file.Name.Replace(".aedat", ""));
+                }
+                else
+                {
+                    int numOfEvents = Int32.Parse(numOfEventInput.Text);
+                    await EventBasedReconstruction(aedatFile, cam, numOfEvents, maxFrames, folder2, file.Name.Replace(".aedat", ""));
+                }
+            }
+            showLoading.IsActive = false;
+            backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+            if(e.Parameter != null)
+            {
+                if (e.Parameter.GetType() == typeof(FileActivatedEventArgs))
+                {
+                    var params2 = (FileActivatedEventArgs)e.Parameter;
+                    List<StorageFile> fileList = new List<StorageFile>();
+                    foreach (var file in params2.Files)
+                    {
+                        fileList.Add(((StorageFile)file));
+                    }
+                    BulkExport(fileList, 100, 500);
+                }
+            }
+            
+
+
+        }
+
+        public async Task TimeBasedReconstruction(Stream aedatFile, CameraParameters cam, int frameTime, int maxFrames, StorageFolder folder, string fileName)
 		{
 			byte[] bytes = new byte[5*Convert.ToInt32(Math.Pow(10,8))]; // Read 0.5 GB at a time
 			int lastTime = -999999;
