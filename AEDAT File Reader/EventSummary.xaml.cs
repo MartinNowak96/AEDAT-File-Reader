@@ -46,12 +46,10 @@ namespace AEDAT_File_Reader
 		string previousValueMaxFrame = "100";
 		string previousValueTimePerFrame = "1000";
 
-
 		private async void SelectFile_Tapped(object sender, TappedRoutedEventArgs e)
 		{
 			int frameTime;
 			int maxFrames;
-
 
 			try
 			{
@@ -83,7 +81,6 @@ namespace AEDAT_File_Reader
 				return;
 			}
 
-
 			var picker2 = new FolderPicker
 			{
 				ViewMode = PickerViewMode.Thumbnail,
@@ -109,7 +106,6 @@ namespace AEDAT_File_Reader
 
         public async void BulkExport(List<StorageFile> files, int maxFrames,int frameTime)
         {
-            
             var picker2 = new FolderPicker
             {
                 ViewMode = PickerViewMode.Thumbnail,
@@ -125,18 +121,12 @@ namespace AEDAT_File_Reader
                 return;
             }
 
-
             foreach (StorageFile file in files)
             {
-                //byte[] aedatFile = await AedatUtilities.ReadToBytes(file);
-
                 var headerData = await AedatUtilities.GetHeaderData(file);
 
                 var aedatFile = (await file.OpenReadAsync()).AsStreamForRead();
-                // Newstuff
-                //FileStream aedatFile = new FileStream(file.Path, FileMode.Open, FileAccess.Read);
                 aedatFile.Seek(headerData.Item1, SeekOrigin.Begin);//skip over header.
-
 
                 // Determine camera type from AEDAT header
                 CameraParameters cam = headerData.Item2;
@@ -148,9 +138,7 @@ namespace AEDAT_File_Reader
                 showLoading.IsActive = true;
                 backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Visible;
 
-
                 StorageFolder folder2 = await folder.CreateFolderAsync(file.Name.Replace(".aedat", "") + " Event Chunks");
-
 
                 if (playbackType.IsOn)
                 {
@@ -182,9 +170,6 @@ namespace AEDAT_File_Reader
                     BulkExport(fileList, 100, 500);
                 }
             }
-            
-
-
         }
 
         public async Task TimeBasedReconstruction(Stream aedatFile, CameraParameters cam, int frameTime, int maxFrames, StorageFolder folder, string fileName)
@@ -194,7 +179,6 @@ namespace AEDAT_File_Reader
 			int timeStamp;
 			int frameCount = 0;
 			int writeBufferSize = 50000;			// Maximum number of characters to collect before writing to disk
-
 
 			// Create CSV file
 			StorageFile file = await folder.CreateFileAsync(fileName + ".csv", CreationCollisionOption.GenerateUniqueName);
@@ -253,7 +237,6 @@ namespace AEDAT_File_Reader
 				}
 				bytesRead = aedatFile.Read(bytes, 0, bytes.Length);
 			}
-			
 			// Append any remaining data
 			await FileIO.AppendTextAsync(file, fileConent);
 		}
@@ -265,7 +248,6 @@ namespace AEDAT_File_Reader
 			int timeStamp;
 			int frameCount = 0;
 			int writeBufferSize = 50000;            // Maximum number of characters to collect before writing to disk
-
 
 			// Create CSV file
 			StorageFile file = await folder.CreateFileAsync(fileName + ".csv", CreationCollisionOption.GenerateUniqueName);
@@ -325,7 +307,6 @@ namespace AEDAT_File_Reader
 				}
 				bytesRead = aedatFile.Read(bytes, 0, bytes.Length);
 			}
-
 			// Append any remaining data
 			await FileIO.AppendTextAsync(file, fileConent);
 		}
@@ -351,7 +332,6 @@ namespace AEDAT_File_Reader
 			{
 				maxFrames = Int32.Parse(maxFramesTB.Text);
 			}
-
 
 			if (maxFrames <= 0 || frameTime <= 0)
 			{
@@ -411,9 +391,6 @@ namespace AEDAT_File_Reader
 			{
 
 			}
-
 		}
-
-
 	}
 }

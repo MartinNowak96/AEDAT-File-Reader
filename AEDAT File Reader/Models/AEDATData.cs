@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.ObjectModel;
 
 namespace AEDAT_File_Reader.Models
 {
     public class AEDATData
     {
-        public int id { get; set; }
         public string name { get; set; }
         public double startingTime { get; set; }
         public double duration { get; set; }

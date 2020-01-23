@@ -26,7 +26,6 @@ namespace AEDAT_File_Reader.Models
             int[] XY = cam.getXY(currentDataEntry, cam.cameraY, cam.cameraX);
             x = XY[0];
             y = XY[1];
-
         }
     }
 

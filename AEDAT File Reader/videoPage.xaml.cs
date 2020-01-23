@@ -24,10 +24,8 @@ using Windows.UI.Xaml.Media.Imaging;
 
 namespace AEDAT_File_Reader
 {
-
 	public class EventColor
 	{
-
 		public EventColor(string name, byte[] color)
 		{
 			Name = name;
@@ -41,7 +39,6 @@ namespace AEDAT_File_Reader
 		public static readonly byte[] Gray = new byte[] { 127, 127, 127, 0 };
 		public static readonly byte[] White = new byte[] { 255, 255, 255, 0 };
 	}
-
 
 
 	public sealed partial class videoPage : Page
@@ -82,7 +79,6 @@ namespace AEDAT_File_Reader
 		string previousValueMaxFrame = "100";
 		string previousValueTimePerFrame = "1000";
 
-
 		private async void SelectFile_Tapped(object sender, TappedRoutedEventArgs e)
 		{
 			EventColor onColor;
@@ -110,7 +106,6 @@ namespace AEDAT_File_Reader
 				SuggestedStartLocation = PickerLocationId.PicturesLibrary
 			};
 			picker.FileTypeFilter.Add(".AEDAT");
-
 
 			// Select AEDAT file to be converted
 			StorageFile file = await picker.PickSingleFileAsync();
@@ -206,13 +201,10 @@ namespace AEDAT_File_Reader
 							lastTime = timeStamp;
 						}
 					}
-
 				}
 				bytesRead = aedatFile.Read(aedatBytes, 0, aedatBytes.Length);
 			}
-
 			return composition;
-
 		}
 
 		public async Task<MediaComposition> EventBasedReconstruction(Stream aedatFile, CameraParameters cam, EventColor onColor, EventColor offColor, int eventsPerFrame, int maxFrames, float playback_frametime)
@@ -260,14 +252,10 @@ namespace AEDAT_File_Reader
 						}
 						currentFrame = new byte[pixelStream.Length];
 					}
-
-
 				}
 				bytesRead = aedatFile.Read(aedatBytes, 0, aedatBytes.Length);
 			}
-
 			return composition;
-
 		}
 
 
@@ -299,8 +287,6 @@ namespace AEDAT_File_Reader
 			_MediaEncodingProfile.Video.Width = vidX;
 			_MediaEncodingProfile.Video.Height = vidY;
 
-
-
 			var saveOperation =  composition.RenderToFileAsync(sampleFile, MediaTrimmingPreference.Precise, _MediaEncodingProfile);
 			//mediaSimple.Source = new Uri("ms-appx:///WBVideo.mp4");
 			saveOperation.Progress = new AsyncOperationProgressHandler<TranscodeFailureReason, double>(async (info, progress) =>
@@ -321,7 +307,6 @@ namespace AEDAT_File_Reader
 
 				}));
 			});
-			
 		}
 
 		private (int, int, EventColor, EventColor, float) ParseVideoSettings()
@@ -341,7 +326,6 @@ namespace AEDAT_File_Reader
 			{
 				frameTime = Int32.Parse(frameTimeTB.Text);
 			}
-
 			if (allFrameCheckBox.IsChecked == true)
 			{
 				maxFrames = 2147483647;
@@ -350,7 +334,6 @@ namespace AEDAT_File_Reader
 			{
 				maxFrames = Int32.Parse(maxFramesTB.Text);
 			}
-
 
 			if (maxFrames <= 0 || frameTime <= 0)
 			{
@@ -421,7 +404,6 @@ namespace AEDAT_File_Reader
 			{
 
 			}
-			
 		}
 	}
 }

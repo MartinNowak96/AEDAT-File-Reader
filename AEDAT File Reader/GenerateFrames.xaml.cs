@@ -1,21 +1,14 @@
 ﻿using AEDAT_File_Reader.Models;
-using Microsoft.Graphics.Canvas;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
-using Windows.Foundation;
 using Windows.Graphics.Imaging;
-using Windows.Media.Editing;
-using Windows.Media.MediaProperties;
-using Windows.Media.Transcoding;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.Storage.Streams;
-using Windows.UI.Core;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media.Imaging;
@@ -152,14 +145,12 @@ namespace AEDAT_File_Reader
 			}
             showLoading.IsActive = false;
             backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
-
         }
 
         private static Stream InitBitMap(CameraParameters cam)
         {
             // Initilize writeable bitmap
             WriteableBitmap bitmap = new WriteableBitmap(cam.cameraX, cam.cameraY); // init image with camera size
-            InMemoryRandomAccessStream inMemoryRandomAccessStream = new InMemoryRandomAccessStream();
             Stream pixelStream = bitmap.PixelBuffer.AsStream();
             return pixelStream;
         }
@@ -184,7 +175,6 @@ namespace AEDAT_File_Reader
 
 					timeStamp = currentEvent.time;
 					AedatUtilities.SetPixel(ref currentFrame, currentEvent.x, currentEvent.y, (currentEvent.onOff ? onColor.Color : offColor.Color), cam.cameraX);
-
 
 					if (lastTime == -999999)
 					{
@@ -230,11 +220,9 @@ namespace AEDAT_File_Reader
 							lastTime = timeStamp;
 						}
 					}
-
 				}
 				bytesRead = aedatFile.Read(aedatBytes, 0, aedatBytes.Length);
 			}
-
         }
 
         public async Task EventBasedReconstruction(Stream aedatFile, CameraParameters cam, EventColor onColor, EventColor offColor, int eventsPerFrame, int maxFrames, StorageFolder folder, string fileName)
@@ -281,24 +269,16 @@ namespace AEDAT_File_Reader
 												pixels);
 							await encoder.FlushAsync();
 						}
-
-
 						frameCount++;
 						// Stop adding frames to video if max frames has been reached
-						if (frameCount >= maxFrames)
-						{
-							return;
-						}
+						if (frameCount >= maxFrames) return;
+
 						currentFrame = new byte[pixelStream.Length];
 					}
-
-
 				}
 				bytesRead = aedatFile.Read(aedatBytes, 0, aedatBytes.Length);
 			}
-
             return;
-
         }
 
         private (int, int, EventColor, EventColor, float) ParseVideoSettings()
@@ -390,8 +370,6 @@ namespace AEDAT_File_Reader
             {
 
             }
-
         }
-
     }
 }

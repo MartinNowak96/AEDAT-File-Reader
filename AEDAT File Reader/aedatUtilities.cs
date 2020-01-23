@@ -34,7 +34,6 @@ namespace AEDAT_File_Reader
 			this.cameraX = cameraX;
 			this.cameraY = cameraY;
 		}
-
 	}
 
 
@@ -82,7 +81,6 @@ namespace AEDAT_File_Reader
 					break;
 				}
 			}
-
 			return endOfHeaderIndex;
 		}
 
@@ -147,12 +145,10 @@ namespace AEDAT_File_Reader
 				}
 
 			}
-
 			var searchReturn = fileBytes.Skip(startOfLineIndex).Take(newlineAttempts);
 			return Encoding.UTF8.GetString(searchReturn.ToArray());
 		}
 
-		
 
         public static CameraParameters ParseCameraModel(string s)
         {
@@ -162,7 +158,6 @@ namespace AEDAT_File_Reader
                 case string dvs240 when dvs240.Contains("DAVIS240"): return new CameraParameters(240, 180, "DAVIS240", GetXYCords240, GetEventType240);
                 default: return null;
             }
-
 		}
 
 
@@ -280,15 +275,13 @@ namespace AEDAT_File_Reader
 			int bytesRead = aedatFile.Read(aedatBytes, 0, aedatBytes.Length);
 			while (bytesRead != 0)
 			{
-				for (int i = 0, length = bytesRead; i < length; i += AedatUtilities.dataEntrySize)
+				for (int i = 0, length = bytesRead; i < length; i += dataEntrySize)
 				{
 					tableData.Add(new AEDATEvent(aedatBytes, i, cam));
 				}
 				bytesRead = aedatFile.Read(aedatBytes, 0, aedatBytes.Length);
 			}
-
 			return tableData;
-
 		}
 
 		public static async Task<byte[]> ReadToBytes(StorageFile file)
@@ -302,7 +295,6 @@ namespace AEDAT_File_Reader
 					result = memoryStream.ToArray();
 				}
 			}
-
 			return result;
 		}
 
@@ -330,12 +322,9 @@ namespace AEDAT_File_Reader
 				string cameraTypeSearch = FindLineInHeader(AedatUtilities.hardwareInterfaceCheck, ref header);
 				CameraParameters cam = ParseCameraModel(cameraTypeSearch);
 				reader.Dispose();
-				return new Tuple<int, CameraParameters> ( endOfHeader, cam );
-				
+				return new Tuple<int, CameraParameters> ( endOfHeader, cam );	
 			}
-			
 		}
-
 
 
 		/// <summary>

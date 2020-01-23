@@ -100,7 +100,6 @@ namespace AEDAT_File_Reader
 					await BulkExport();
 					break;
 			}
-
 		}
 
 		private async Task SingleExport()
@@ -163,14 +162,11 @@ namespace AEDAT_File_Reader
 					await toDelete.DeleteAsync();
 					newCSV = await saveFolder.CreateFileAsync(saveName);
 				}
-
 				List<AEDATEvent> tempEvents = await UpdateDataGrid(file);
 				// Create CSV
 				await SaveAsCSV(tempEvents, newCSV, cordCol.IsOn, onOffCol.IsOn, pixelNumber.IsOn);
 			}
-
 			await bulkExportComplete.ShowAsync();
-
 		}
 
 		private async Task SaveAsCSV(List<AEDATEvent> data,StorageFile saveFile, bool includeCords, bool onOffType, bool pixelNumber)
@@ -226,9 +222,7 @@ namespace AEDAT_File_Reader
                     }
                 }
                 stream.Dispose();
-
             }
-
         }
 
 		private void CordCol_Toggled(object sender, Windows.UI.Xaml.RoutedEventArgs e)

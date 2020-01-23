@@ -19,7 +19,6 @@ namespace AEDAT_File_Reader
             this.InitializeComponent();
         }
         FileActivatedEventArgs FileArgs;
-        
 
         private void nav_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
         {
@@ -59,7 +58,6 @@ namespace AEDAT_File_Reader
                 {
                     ContentFrame.Navigate(typeof(GenerateFrames));
                 }
-
             }
         }
 
@@ -73,8 +71,6 @@ namespace AEDAT_File_Reader
                 var params2 = (FileActivatedEventArgs)e.Parameter;
                 filePopup.IsOpen = true;
             }
-            
-
         }
 
         private void ApplyFile_Click(object sender, Windows.UI.Xaml.RoutedEventArgs e)
@@ -82,7 +78,8 @@ namespace AEDAT_File_Reader
             if (Convert.ToBoolean(FileSummaryRadio.IsChecked))
             {
                 ContentFrame.Navigate(typeof(SummaryView),FileArgs);
-            }else if (Convert.ToBoolean(FileEventRadio.IsChecked))
+            }
+			else if (Convert.ToBoolean(FileEventRadio.IsChecked))
             {
                 ContentFrame.Navigate(typeof(eventList), FileArgs);
             }
@@ -97,11 +94,11 @@ namespace AEDAT_File_Reader
             else if(Convert.ToBoolean(FileGenerateFramesRadio.IsChecked))
             {
                 ContentFrame.Navigate(typeof(GenerateFrames), FileArgs);
-            } else if (Convert.ToBoolean(FileEventChunksRadio.IsChecked))
+            }
+			else if (Convert.ToBoolean(FileEventChunksRadio.IsChecked))
             {
                 ContentFrame.Navigate(typeof(EventChunks), FileArgs);
             }
-            
         }
     }
 }

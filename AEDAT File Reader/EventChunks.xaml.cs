@@ -1,31 +1,11 @@
 ﻿using AEDAT_File_Reader.Models;
-using Microsoft.Graphics.Canvas;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-using Windows.Graphics.Imaging;
-using Windows.Media.Editing;
-using Windows.Media.MediaProperties;
-using Windows.Media.Transcoding;
 using Windows.Storage;
 using Windows.Storage.Pickers;
-using Windows.Storage.Streams;
-using Windows.UI.Core;
-using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Media.Imaging;
-using Windows.UI.Xaml.Navigation;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -69,8 +49,6 @@ namespace AEDAT_File_Reader
 		{
 			int frameTime;
 			int maxFrames;
-
-
 			try
 			{
 				// Grab video reconstruction settings from GUI
@@ -133,9 +111,7 @@ namespace AEDAT_File_Reader
 				showLoading.IsActive = true;
 				backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Visible;
 
-
 				StorageFolder folder2 = await folder.CreateFolderAsync(file.Name.Replace(".aedat", "") + " Event Chunks");
-
 
 				if (playbackType.IsOn)
 				{
@@ -147,8 +123,6 @@ namespace AEDAT_File_Reader
 					await EventBasedReconstruction(aedatFile, cam, numOfEvents, maxFrames, folder2, file.Name.Replace(".aedat", ""));
 				}
 			}
-			
-
 			showLoading.IsActive = false;
 			backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
 		}
@@ -157,7 +131,6 @@ namespace AEDAT_File_Reader
 
 		public async Task TimeBasedReconstruction(byte[] aedatFile, CameraParameters cam,  int frameTime, int maxFrames, StorageFolder folder,string fileName)
 		{
-
 			int lastTime = -999999;
 			int timeStamp;
 			int frameCount = 0;
@@ -173,7 +146,6 @@ namespace AEDAT_File_Reader
                 fileConent += currentEvent.onOff + "," + currentEvent.x+ "," + currentEvent.y + "," + currentEvent.time + "\n";
                 timeStamp = currentEvent.time;
 
-
 				if (lastTime == -999999)
 				{
 					lastTime = timeStamp;
@@ -188,7 +160,6 @@ namespace AEDAT_File_Reader
 							await FileIO.WriteTextAsync(file, "On/Off,X,Y,Timestamp\n" + fileConent);
 						} catch { }
 						
-						
 						fileConent = "";
 						frameCount++;
 						// Stop adding frames to video if max frames has been reached
@@ -199,9 +170,7 @@ namespace AEDAT_File_Reader
 						lastTime = timeStamp;
 					}
 				}
-
 			}
-
 		}
 
 		public async Task EventBasedReconstruction(byte[] aedatFile, CameraParameters cam, int eventsPerFrame, int maxFrames, StorageFolder folder, string fileName)
@@ -216,8 +185,8 @@ namespace AEDAT_File_Reader
 			{
                 AEDATEvent currentEvent = new AEDATEvent(aedatFile, i, cam);
 
-                fileConent += currentEvent.onOff + "," + currentEvent.x + "," + currentEvent.y + "," + currentEvent.time + "\n";
-                eventCount++;
+				fileConent += $"{currentEvent.onOff},{currentEvent.x},{currentEvent.y},{currentEvent.time}\n";
+				eventCount++;
 				if (eventCount >= eventsPerFrame) // Collected events within specified timeframe, add frame to video
 				{
 					eventCount = 0;
@@ -232,10 +201,7 @@ namespace AEDAT_File_Reader
 						return;
 					}
 				}
-
-
 			}
-
 		}
 
 		private (int, int) ParseVideoSettings()
@@ -260,13 +226,10 @@ namespace AEDAT_File_Reader
 				maxFrames = Int32.Parse(maxFramesTB.Text);
 			}
 
-
 			if (maxFrames <= 0 || frameTime <= 0)
 			{
 				throw new FormatException();
 			}
-
-
 
 			return (frameTime, maxFrames);
 		}
@@ -322,10 +285,6 @@ namespace AEDAT_File_Reader
 			{
 
 			}
-
 		}
-
-
-
 	}
 }
