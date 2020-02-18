@@ -72,7 +72,8 @@ namespace AEDAT_File_Reader
 				new EventColor("Red", EventColor.Red),
 				new EventColor("Blue", EventColor.Blue),
 				new EventColor("Gray", EventColor.Gray),
-				new EventColor("White", EventColor.White)
+				new EventColor("White", EventColor.White),
+				new EventColor("Custom", null)
 			};
 			InitializeComponent();
 		}
@@ -343,6 +344,18 @@ namespace AEDAT_File_Reader
 			// Grab ON and OFF colors from comboBox
 			EventColor onColor = onColorCombo.SelectedItem as EventColor;
 			EventColor offColor = offColorCombo.SelectedItem as EventColor;
+
+			if (onColor.Name == "Custom")
+			{
+				// use color picker
+				// onColor.Color = colorPicker Color
+			}
+
+			if (offColor.Name == "Custom")
+			{
+				// use color picker
+				// offColor.Color = colorPicker Color
+			}
 
 			return (frameTime, maxFrames, onColor, offColor, fps);
 		}
