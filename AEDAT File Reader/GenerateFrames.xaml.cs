@@ -281,37 +281,7 @@ namespace AEDAT_File_Reader
             return;
         }
 
-        private (int, int, EventColor, EventColor, float) ParseVideoSettings()
-        {
-            int frameTime = 33333;  // The amount of time per frame in uS (30 fps = 33333)
-            int maxFrames;          // Max number of frames in the reconstructed video
-            float fps = framerateCombo.SelectedIndex == 1 ? 60.0f : 30.0f; ;
-            if (realTimeCheckbox.IsChecked == true)
-            {
-                frameTime = 33333;
-                if (framerateCombo.SelectedIndex == 1)
-                {
-                    frameTime = 33333 / 2;
-                }
-            }
-            else
-            {
-                frameTime = Int32.Parse(frameTimeTB.Text);
-            }
-
-			maxFrames = allFrameCheckBox.IsChecked == true ? 2147483647 : Int32.Parse(maxFramesTB.Text);
-
-			if (maxFrames <= 0 || frameTime <= 0)
-            {
-                throw new FormatException();
-            }
-
-            // Grab ON and OFF colors from comboBox
-            EventColor onColor = onColorCombo.SelectedItem as EventColor;
-            EventColor offColor = offColorCombo.SelectedItem as EventColor;
-
-            return (frameTime, maxFrames, onColor, offColor, fps);
-        }
+       
 
         private void AllFrameCheckBox_Checked(object sender, Windows.UI.Xaml.RoutedEventArgs e)
         {
