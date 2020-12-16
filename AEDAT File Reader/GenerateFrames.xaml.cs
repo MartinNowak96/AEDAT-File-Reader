@@ -66,13 +66,12 @@ namespace AEDAT_File_Reader
             EventColor offColor;
             int frameTime;
             int maxFrames;
-            float fps;
 
             try
             {
                 // Grab video reconstruction settings from GUI
                 // Will throw a FormatException if input is invalid (negative numbers or input has letters)
-                (frameTime, maxFrames, onColor, offColor, fps) = ParseVideoSettings();
+                (frameTime, maxFrames, onColor, offColor) = ParseFrameSettings();
             }
             catch (FormatException)
             {
@@ -129,7 +128,7 @@ namespace AEDAT_File_Reader
 				}
 				showLoading.IsActive = true;
 				backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Visible;
-				float playback_frametime = 1.0f / fps;
+			
 
 				StorageFolder folder2 = await folder.CreateFolderAsync(file.Name.Replace(".aedat", "") + (playbackType.IsOn ? " time based" : " event based") + " Frames");
 
@@ -281,25 +280,18 @@ namespace AEDAT_File_Reader
             return;
         }
 
-        private (int, int, EventColor, EventColor, float) ParseVideoSettings()
+        private (int, int, EventColor, EventColor) ParseFrameSettings()
         {
             int frameTime = 33333;  // The amount of time per frame in uS (30 fps = 33333)
             int maxFrames;          // Max number of frames in the reconstructed video
-            float fps = framerateCombo.SelectedIndex == 1 ? 60.0f : 30.0f; ;
-            if (realTimeCheckbox.IsChecked == true)
-            {
-                frameTime = 33333;
-                if (framerateCombo.SelectedIndex == 1)
-                {
-                    frameTime = 33333 / 2;
-                }
-            }
-            else
+
+            if (!playbackType.IsOn)
             {
                 frameTime = Int32.Parse(frameTimeTB.Text);
             }
 
-			maxFrames = allFrameCheckBox.IsChecked == true ? 2147483647 : Int32.Parse(maxFramesTB.Text);
+
+            maxFrames = allFrameCheckBox.IsChecked == true ? 2147483647 : Int32.Parse(maxFramesTB.Text);
 
 			if (maxFrames <= 0 || frameTime <= 0)
             {
@@ -310,7 +302,7 @@ namespace AEDAT_File_Reader
             EventColor onColor = onColorCombo.SelectedItem as EventColor;
             EventColor offColor = offColorCombo.SelectedItem as EventColor;
 
-            return (frameTime, maxFrames, onColor, offColor, fps);
+            return (frameTime, maxFrames, onColor, offColor);
         }
 
         private void AllFrameCheckBox_Checked(object sender, Windows.UI.Xaml.RoutedEventArgs e)
@@ -334,20 +326,7 @@ namespace AEDAT_File_Reader
             offColorCombo.SelectedIndex = 1;
         }
 
-        private void RealTimeCheckbox_Checked(object sender, Windows.UI.Xaml.RoutedEventArgs e)
-        {
-            this.previousValueTimePerFrame = frameTimeTB.Text;
-            frameTimeTB.Text = "Real Time";
-            frameTimeTB.IsReadOnly = true;
-            frameTimeTB.IsEnabled = false;
-        }
-
-        private void RealTimeCheckbox_Unchecked(object sender, Windows.UI.Xaml.RoutedEventArgs e)
-        {
-            frameTimeTB.Text = this.previousValueTimePerFrame;
-            frameTimeTB.IsReadOnly = false;
-            frameTimeTB.IsEnabled = true;
-        }
+       
 
         private void PlaybackType_Toggled(object sender, Windows.UI.Xaml.RoutedEventArgs e)
         {
@@ -356,13 +335,11 @@ namespace AEDAT_File_Reader
                 if (playbackType.IsOn)
                 {
                     numOfEventInput.IsEnabled = false;
-                    realTimeCheckbox.IsEnabled = true;
                     frameTimeTB.IsEnabled = true;
                 }
                 else
                 {
                     numOfEventInput.IsEnabled = true;
-                    realTimeCheckbox.IsEnabled = false;
                     frameTimeTB.IsEnabled = false;
                 }
             }
