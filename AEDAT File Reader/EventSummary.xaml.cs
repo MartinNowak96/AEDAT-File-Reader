@@ -172,7 +172,7 @@ namespace AEDAT_File_Reader
             }
         }
 
-        public async Task TimeBasedReconstruction(Stream aedatFile, CameraParameters cam, int frameTime, int maxFrames, StorageFolder folder, string fileName)
+        public async Task TimeBasedReconstruction(Stream aedatFile, CameraParameters cam, int frameTime, int maxFrames, StorageFolder folder2, string fileName)
 		{
 			byte[] bytes = new byte[5*Convert.ToInt32(Math.Pow(10,8))]; // Read 0.5 GB at a time
 			int lastTime = -999999;
@@ -181,7 +181,7 @@ namespace AEDAT_File_Reader
 			int writeBufferSize = 50000;			// Maximum number of characters to collect before writing to disk
 
 			// Create CSV file
-			StorageFile file = await folder.CreateFileAsync(fileName + ".csv", CreationCollisionOption.GenerateUniqueName);
+			StorageFile file = await folder2.CreateFileAsync(fileName + ".csv", CreationCollisionOption.GenerateUniqueName);
 			await FileIO.WriteTextAsync(file, "On Count,Off Count, Combined Count\n");
 
 			string fileConent = "";
@@ -241,7 +241,7 @@ namespace AEDAT_File_Reader
 			await FileIO.AppendTextAsync(file, fileConent);
 		}
 
-		public async Task EventBasedReconstruction(Stream aedatFile, CameraParameters cam, int eventsPerFrame, int maxFrames, StorageFolder folder, string fileName)
+		public async Task EventBasedReconstruction(Stream aedatFile, CameraParameters cam, int eventsPerFrame, int maxFrames, StorageFolder folder2, string fileName)
 		{
 			byte[] bytes = new byte[5 * Convert.ToInt32(Math.Pow(10, 8))]; // Read 0.5 GB at a time
 			int lastTime = -999999;
@@ -250,7 +250,7 @@ namespace AEDAT_File_Reader
 			int writeBufferSize = 50000;            // Maximum number of characters to collect before writing to disk
 
 			// Create CSV file
-			StorageFile file = await folder.CreateFileAsync(fileName + ".csv", CreationCollisionOption.GenerateUniqueName);
+			StorageFile file = await folder2.CreateFileAsync(fileName + ".csv", CreationCollisionOption.GenerateUniqueName);
 			await FileIO.WriteTextAsync(file, "On Count,Off Count, Duration\n");
 
 			string fileConent = "";
