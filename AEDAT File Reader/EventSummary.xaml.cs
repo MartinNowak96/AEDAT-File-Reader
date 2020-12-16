@@ -81,20 +81,6 @@ namespace AEDAT_File_Reader
 				return;
 			}
 
-			var picker2 = new FolderPicker
-			{
-				ViewMode = PickerViewMode.Thumbnail,
-				SuggestedStartLocation = PickerLocationId.PicturesLibrary
-			};
-			picker2.FileTypeFilter.Add("*");
-			// Select AEDAT file to be converted
-			StorageFolder folder = await picker2.PickSingleFolderAsync();
-			if (folder == null)
-			{
-				showLoading.IsActive = false;
-				backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
-				return;
-			}
 
             List<StorageFile> fileList = new List<StorageFile>();
             foreach(var file in files)
