@@ -68,7 +68,6 @@
                         <StackPanel Orientation="Horizontal">
                             <TextBox x:Name="frameTimeTB" InputScope="Number" Header="Time per frame(μS):" 
 					 Width="200" HorizontalAlignment="Left" VerticalAlignment="Top" Text="1500"/>
-                            <CheckBox   Margin="10,23,0,0" x:Name="realTimeCheckbox" Content="Real Time Playback" Checked="RealTimeCheckbox_Checked" Unchecked="RealTimeCheckbox_Unchecked"  ></CheckBox>
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal" Grid.Column="1" x:Name="numOfEventsStack" >
