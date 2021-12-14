@@ -138,7 +138,7 @@ namespace AEDAT_File_Reader
                 showLoading.IsActive = true;
                 backgroundTint.Visibility = Windows.UI.Xaml.Visibility.Visible;
 
-                StorageFolder folder2 = await folder.CreateFolderAsync(file.Name.Replace(".aedat", "") + " Event Chunks");
+                StorageFolder folder2 = await folder.CreateFolderAsync(file.Name.Replace(".aedat", "") + " EventChunks");
 
                 if (playbackType.IsOn)
                 {
@@ -187,7 +187,6 @@ namespace AEDAT_File_Reader
 			string fileConent = "";
 			int onCount = 0;
 			int offCount = 0;
-			int bothCount = 0;
 
 			int bytesRead = aedatFile.Read(bytes, 0, bytes.Length);
 			// Read through AEDAT file
@@ -198,7 +197,6 @@ namespace AEDAT_File_Reader
                     AEDATEvent currentEvent = new AEDATEvent(bytes, i, cam);
 
 					_ = currentEvent.onOff ? onCount++ : offCount++;
-					bothCount++;
                     timeStamp = currentEvent.time;
 					if (lastTime == -999999)
 					{
@@ -210,7 +208,7 @@ namespace AEDAT_File_Reader
 						{
 							try
 							{
-								fileConent += onCount + "," + offCount + "," + bothCount + "\n";
+								fileConent += onCount + "," + offCount + "," + (onCount+offCount) + "\n";
 
 								// Write to file if buffer size is reached
 								if (fileConent.Length > writeBufferSize)
@@ -221,7 +219,6 @@ namespace AEDAT_File_Reader
 							}
 							catch { }
 
-							bothCount = 0;
 							onCount = 0;
 							offCount = 0;
 
@@ -256,7 +253,6 @@ namespace AEDAT_File_Reader
 			string fileConent = "";
 			int onCount = 0;
 			int offCount = 0;
-			int bothCount = 0;
 
 			int bytesRead = aedatFile.Read(bytes, 0, bytes.Length);
 			// Read through AEDAT file
@@ -268,7 +264,6 @@ namespace AEDAT_File_Reader
 
                     _ = currentEvent.onOff ? onCount++ : offCount++;
                     timeStamp = currentEvent.time;
-					bothCount++;
 					
 					if (lastTime == -999999)
 					{
@@ -276,7 +271,7 @@ namespace AEDAT_File_Reader
 					}
 					else
 					{
-						if (bothCount >= eventsPerFrame) // Collected enough events, add frame to video
+						if (onCount+offCount >= eventsPerFrame) // Collected enough events, add frame to video
 						{
 							try
 							{
@@ -291,7 +286,6 @@ namespace AEDAT_File_Reader
 							}
 							catch { }
 
-							bothCount = 0;
 							onCount = 0;
 							offCount = 0;
 
