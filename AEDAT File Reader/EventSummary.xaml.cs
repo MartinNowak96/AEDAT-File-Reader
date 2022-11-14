@@ -182,7 +182,7 @@ namespace AEDAT_File_Reader
 
 			// Create CSV file
 			StorageFile file = await folder.CreateFileAsync(fileName + ".csv", CreationCollisionOption.GenerateUniqueName);
-			await FileIO.WriteTextAsync(file, "On Count,Off Count, Combined Count\n");
+			await FileIO.WriteTextAsync(file, "On Count,Off Count,Combined Count\n");
 
 			string fileConent = "";
 			int onCount = 0;
